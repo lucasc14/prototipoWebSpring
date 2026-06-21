@@ -66,6 +66,19 @@ const utensilios = {
 // ===== Estado atual =====
 let receitaAtual;
 
+// ===== Modo de checklist (RF04): 'recebimento' | 'execucao' =====
+let modoChecklist = 'recebimento';
+
+// ===== Solicitações adicionais (por receita + tipo) =====
+let solicitacoes = JSON.parse(localStorage.getItem('sigec-solicitacoes') || '{}');
+const salvarSolicitacoes = () =>
+  localStorage.setItem('sigec-solicitacoes', JSON.stringify(solicitacoes));
+
+function getSolic(key, tipo) {
+  solicitacoes[key] = solicitacoes[key] || { insumo: [], util: [] };
+  return solicitacoes[key][tipo];
+}
+
 // ===== Helpers de DOM =====
 const $ = id => document.getElementById(id);
 
@@ -95,6 +108,13 @@ const painels = {
 
 const select = $('recipe-select');
 
+// Status visuais das solicitações
+const REQ_STATUS = {
+  pending:  { cls: 'pending',  icon: 'hourglass_top', txt: 'Aguardando aprovação' },
+  approved: { cls: 'approved', icon: 'check_circle',  txt: 'Aprovada' },
+  rejected: { cls: 'rejected', icon: 'cancel',        txt: 'Recusada' }
+};
+
 // ===== Funções genéricas =====
 function aplicarScrollAdaptativo(container, qtd, rotulo) {
   const ativar = qtd > LIMITE_SCROLL;
@@ -115,11 +135,13 @@ function aplicarScrollAdaptativo(container, qtd, rotulo) {
 function updateProgress(p) {
   const itens = p.getItens();
   const total = itens.length;
-  const done  = itens.filter(i => i.ok).length;
+  const campo = modoChecklist === 'recebimento' ? 'recebido' : 'ok';
+  const done  = itens.filter(i => i[campo]).length;
   const pct   = total ? Math.round((done / total) * 100) : 0;
   p.pText.textContent = `${done} de ${total} itens`;
   p.pPct.textContent  = pct;
   p.pBar.style.width  = pct + '%';
+  if (window.atualizarNotificacoes) window.atualizarNotificacoes();
 }
 
 function renderPainel(p) {
@@ -128,18 +150,56 @@ function renderPainel(p) {
   p.loc.textContent  = receita.local;
 
   const itens = p.getItens();
-  p.lista.innerHTML = itens.map((it, i) => `
-    <label class="check-item ${it.obs ? 'has-obs' : ''}">
-      <input type="checkbox" data-i="${i}" ${it.ok ? 'checked' : ''}>
-      <span class="check-box"><span class="material-symbols-outlined">check</span></span>
-      <span class="check-label" data-obs="${i}">${it.nome}</span>
-      <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
-      <span class="check-qty">${it.qtd}</span>
-    </label>
-  `).join('');
+  const recv  = modoChecklist === 'recebimento';
 
+  let html = itens.map((it, i) => {
+    if (recv) {
+      // MODO RECEBIMENTO DO CD: conferir caixa + registrar avaria
+      return `
+        <label class="check-item ${it.avaria ? 'has-avaria' : ''} ${it.obs ? 'has-obs' : ''}">
+          <input type="checkbox" data-i="${i}" ${it.recebido ? 'checked' : ''}>
+          <span class="check-box recv-box"><span class="material-symbols-outlined">check</span></span>
+          <span class="check-label" data-obs="${i}">${it.nome}</span>
+          <span class="avaria-flag" title="${it.avaria || ''}"><span class="material-symbols-outlined">report</span></span>
+          <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+          <span class="check-qty">${it.qtd}</span>
+          <button class="btn-avaria" data-avaria="${i}" title="Registrar avaria">
+            <span class="material-symbols-outlined">report</span>Avaria
+          </button>
+        </label>`;
+    }
+    // MODO EXECUÇÃO DA AULA: check simples (vai para a panela)
+    return `
+      <label class="check-item ${it.obs ? 'has-obs' : ''}">
+        <input type="checkbox" data-i="${i}" ${it.ok ? 'checked' : ''}>
+        <span class="check-box"><span class="material-symbols-outlined">check</span></span>
+        <span class="check-label" data-obs="${i}">${it.nome}</span>
+        <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+        <span class="check-qty">${it.qtd}</span>
+      </label>`;
+  }).join('');
+
+  // Solicitações adicionais (mantidas em ambos os modos)
+  const tipo = (p === painels.util) ? 'util' : 'insumo';
+  const solics = getSolic(receitaAtual, tipo);
+
+  html += solics.map((s, i) => {
+    const st = REQ_STATUS[s.status] || REQ_STATUS.pending;
+    return `
+      <div class="check-item is-request" title="${s.justificativa || ''}">
+        <span class="material-symbols-outlined req-ico">assignment_add</span>
+        <span class="check-label">${s.nome}${s.urgencia === 'Urgente' ? '<span class="req-urg">• Urgente</span>' : ''}</span>
+        <span class="req-badge ${st.cls}"><span class="material-symbols-outlined">${st.icon}</span>${st.txt}</span>
+        <span class="check-qty">${s.qtd}</span>
+        <button class="req-del" data-del-solic="${i}" title="Remover solicitação">
+          <span class="material-symbols-outlined sm">delete</span>
+        </button>
+      </div>`;
+  }).join('');
+
+  p.lista.innerHTML = html;
   updateProgress(p);
-  aplicarScrollAdaptativo(p.lista, itens.length, p.rotulo);
+  aplicarScrollAdaptativo(p.lista, itens.length + solics.length, p.rotulo);
 }
 
 function renderTudo() {
@@ -147,28 +207,49 @@ function renderTudo() {
   renderPainel(painels.util);
 }
 
-// ===== Listeners por painel (marcar, limpar, observação) =====
+// ===== Listeners por painel (marcar, limpar, observação, solicitação) =====
 function configurarPainel(tipo, p, btnAddId, btnResetId) {
-  // Marcar / desmarcar
+  // Marcar / desmarcar (grava no campo certo conforme o modo)
   p.lista.addEventListener('change', e => {
     if (e.target.matches('input[type=checkbox]')) {
-      p.getItens()[e.target.dataset.i].ok = e.target.checked;
+      const campo = modoChecklist === 'recebimento' ? 'recebido' : 'ok';
+      p.getItens()[e.target.dataset.i][campo] = e.target.checked;
       updateProgress(p);
     }
   });
 
-  // Abrir modal de observação ao clicar no nome
+  // Clique na lista: avaria > remover solicitação > observação
   p.lista.addEventListener('click', e => {
+    // Registrar avaria (modo recebimento)
+    const avBtn = e.target.closest('[data-avaria]');
+    if (avBtn) {
+      e.preventDefault();
+      abrirAvaria(tipo, Number(avBtn.dataset.avaria));
+      return;
+    }
+    // Remover solicitação adicional
+    const delBtn = e.target.closest('[data-del-solic]');
+    if (delBtn) {
+      e.preventDefault();
+      if (confirm('Remover esta solicitação?')) {
+        getSolic(receitaAtual, tipo).splice(Number(delBtn.dataset.delSolic), 1);
+        salvarSolicitacoes();
+        renderPainel(p);
+      }
+      return;
+    }
+    // Observação
     const label = e.target.closest('.check-label');
-    if (label) {
+    if (label && label.dataset.obs !== undefined) {
       e.preventDefault();
       abrirObs(tipo, Number(label.dataset.obs));
     }
   });
 
-  // Limpar
+  // Limpar (limpa o campo do modo atual)
   $(btnResetId).addEventListener('click', () => {
-    p.getItens().forEach(i => i.ok = false);
+    const campo = modoChecklist === 'recebimento' ? 'recebido' : 'ok';
+    p.getItens().forEach(i => i[campo] = false);
     renderPainel(p);
   });
 
@@ -179,7 +260,7 @@ function configurarPainel(tipo, p, btnAddId, btnResetId) {
     if (!nome || !nome.trim()) return;
     const qtd = prompt('Quantidade (ex.: 500 g, 2 un, 1 L):') || '';
     if (tipo === 'util' && !utensilios[receitaAtual]) utensilios[receitaAtual] = [];
-    p.getItens().push({ nome: nome.trim(), qtd: qtd.trim(), ok: false });
+    p.getItens().push({ nome: nome.trim(), qtd: qtd.trim(), ok: false, recebido: false });
     renderPainel(p);
   });
 }
@@ -275,44 +356,177 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharObs();
 // ===== Inicialização =====
 trocarReceita(select.value);
 
+// ============================================
+// ===== MODAL DE SOLICITAÇÃO ADICIONAL =====
+// ============================================
+(function () {
+  const modal  = $('req-modal');
+  const ctxEl  = $('req-context');
+  const inNome = $('req-nome');
+  const inQtd  = $('req-qtd');
+  const inUrg  = $('req-urgencia');
+  const inJust = $('req-just');
+  if (!modal) return;
+
+  let tipoAtual = 'insumo';
+
+  function abrir(tipo) {
+    tipoAtual = tipo;
+    const label = tipo === 'util' ? 'Utensílio' : 'Insumo';
+    ctxEl.textContent = `${label} • ${receitas[receitaAtual]?.nome || '—'}`;
+    inNome.value = ''; inQtd.value = ''; inJust.value = ''; inUrg.value = 'Normal';
+    modal.classList.add('show');
+    inNome.focus();
+  }
+  function fechar() { modal.classList.remove('show'); }
+
+  document.querySelectorAll('.btn-solicitar').forEach(btn => {
+    btn.addEventListener('click', () => abrir(btn.dataset.tipo));
+  });
+
+  $('req-save').addEventListener('click', () => {
+    const nome = inNome.value.trim();
+    const qtd  = inQtd.value.trim();
+    if (!nome || !qtd) { alert('Preencha o nome do item e a quantidade.'); return; }
+
+    getSolic(receitaAtual, tipoAtual).push({
+      nome, qtd,
+      urgencia: inUrg.value,
+      justificativa: inJust.value.trim(),
+      status: 'pending',  // sempre nasce aguardando aprovação no desktop
+      data: new Date().toLocaleString('pt-BR')
+    });
+    salvarSolicitacoes();
+
+    renderPainel(tipoAtual === 'util' ? painels.util : painels.insumo);
+    fechar();
+
+    if (window.adicionarNotificacaoManual) {
+      window.adicionarNotificacaoManual(
+        `Solicitação enviada: ${nome} (${qtd}) — aguardando aprovação`,
+        'assignment_add'
+      );
+    }
+  });
+
+  $('req-close').addEventListener('click', fechar);
+  $('req-cancel').addEventListener('click', fechar);
+  modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
+})();
+
+// ============================================
+// ===== ABAS DE CHECKLIST (RF04) =====
+// ============================================
+(function () {
+  const tabs = document.querySelectorAll('.ch-tab');
+  const badges = [$('mode-badge-insumo'), $('mode-badge-util')];
+
+  const TEXTO_MODO = {
+    recebimento: { badge: 'Recebimento', confirm: 'Confirmar Recebimento' },
+    execucao:    { badge: 'Execução',    confirm: 'Confirmar Separação' }
+  };
+
+  function aplicarModo(modo) {
+    modoChecklist = modo;
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.modo === modo));
+    badges.forEach(b => { if (b) b.textContent = TEXTO_MODO[modo].badge; });
+
+    // Atualiza rótulo do botão de confirmar dos insumos
+    const btnConf = $('btn-confirm-insumo');
+    if (btnConf) btnConf.textContent = TEXTO_MODO[modo].confirm;
+
+    renderTudo();
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => aplicarModo(tab.dataset.modo));
+  });
+})();
+
+// ============================================
+// ===== MODAL DE AVARIA (RF04) =====
+// ============================================
+const avariaModal = $('avaria-modal');
+let avariaTipoAtual = null, avariaIndexAtual = null;
+
+function abrirAvaria(tipo, i) {
+  avariaTipoAtual = tipo;
+  avariaIndexAtual = i;
+  const item = painels[tipo].getItens()[i];
+  $('avaria-item-name').textContent = item.nome;
+  $('avaria-tipo').value = item.avariaTipo || '';
+  $('avaria-text').value = item.avaria || '';
+  avariaModal.classList.add('show');
+}
+
+function fecharAvaria() {
+  avariaModal.classList.remove('show');
+  avariaTipoAtual = null;
+  avariaIndexAtual = null;
+}
+
+$('avaria-save').addEventListener('click', () => {
+  if (avariaTipoAtual && avariaIndexAtual !== null) {
+    const p = painels[avariaTipoAtual];
+    const item = p.getItens()[avariaIndexAtual];
+    const tipoAv = $('avaria-tipo').value;
+    const desc   = $('avaria-text').value.trim();
+
+    if (!tipoAv && !desc) {
+      // limpar avaria
+      delete item.avaria; delete item.avariaTipo;
+    } else {
+      item.avariaTipo = tipoAv;
+      item.avaria = (tipoAv ? tipoAv + (desc ? ' — ' : '') : '') + desc;
+      if (window.adicionarNotificacaoManual) {
+        window.adicionarNotificacaoManual(
+          `Avaria registrada: ${item.nome} (${tipoAv || 'sem tipo'})`,
+          'report'
+        );
+      }
+    }
+    renderPainel(p);
+  }
+  fecharAvaria();
+});
+
+$('avaria-close').addEventListener('click', fecharAvaria);
+$('avaria-cancel').addEventListener('click', fecharAvaria);
+avariaModal.addEventListener('click', e => { if (e.target === avariaModal) fecharAvaria(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAvaria(); });
+
 // ===== CALENDÁRIO INTERATIVO =====
 (function () {
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-  // Feriados/recesso fixos (MM-DD) — ajuste conforme calendário do Senac
   const FERIADOS = {
     '01-01': 'Ano Novo', '04-21': 'Tiradentes', '05-01': 'Trabalho',
     '09-07': 'Independência', '10-12': 'N. Sra.', '11-15': 'República',
     '12-25': 'Natal', '06-19': 'Recesso', '07-09': 'Recesso'
   };
 
-  // Fichas disponíveis no plano de curso (usa suas receitas existentes)
   const fichasDisponiveis = [
     { id: 'confeitaria', nome: 'Técnicas de Confeitaria' },
     { id: 'panificacao', nome: 'Panificação Clássica' },
     { id: 'asia',        nome: 'Cozinha Internacional: Ásia' }
   ];
 
-  // Fichas alocadas por data { 'YYYY-MM-DD': ['confeitaria', ...] }
   const alocacoes = JSON.parse(localStorage.getItem('sigec-alocacoes') || '{}');
   function salvar() { localStorage.setItem('sigec-alocacoes', JSON.stringify(alocacoes)); }
 
-  // Estado
-  let viewDate = new Date(2026, 5, 1); // Junho/2026
+  let viewDate = new Date(2026, 5, 1);
   let diaSelecionado = null;
 
-  // Elementos
   const modal   = document.getElementById('cal-modal');
   const grid    = document.getElementById('cal-grid');
   const monthEl = document.getElementById('cal-month');
 
-  // Helpers de data
   const pad = n => String(n).padStart(2, '0');
   const chave = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const mmdd  = d => `${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-  // Verifica estoque de uma ficha (integra com `receitas`)
   function statusEstoque(id) {
     const r = receitas[id];
     if (!r) return { classe: 'stock-out', txt: 'Sem ficha' };
@@ -323,7 +537,6 @@ trocarReceita(select.value);
     return { classe: 'stock-low', txt: `${total - ok} item(s) em falta` };
   }
 
-  // Renderiza a grade do mês
   function render() {
     const ano = viewDate.getFullYear();
     const mes = viewDate.getMonth();
@@ -361,7 +574,6 @@ trocarReceita(select.value);
     grid.innerHTML = html;
   }
 
-  // Renderiza painel lateral do dia
   function renderPainel(k) {
     document.getElementById('cal-panel-empty').style.display = 'none';
     document.getElementById('cal-panel-content').style.display = 'block';
@@ -371,7 +583,6 @@ trocarReceita(select.value);
     document.getElementById('cal-panel-date').textContent =
       data.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
 
-    // Alocadas
     const aulas = alocacoes[k] || [];
     const elAloc = document.getElementById('cal-allocated');
     elAloc.innerHTML = aulas.length ? aulas.map(id => {
@@ -391,7 +602,6 @@ trocarReceita(select.value);
         </div>`;
     }).join('') : '<p class="cal-empty-text">Nenhuma ficha alocada.</p>';
 
-    // Disponíveis (não alocadas neste dia)
     const elDisp = document.getElementById('cal-available');
     const livres = fichasDisponiveis.filter(f => !aulas.includes(f.id));
     elDisp.innerHTML = livres.length ? livres.map(f => {
@@ -411,9 +621,6 @@ trocarReceita(select.value);
     }).join('') : '<p class="cal-empty-text">Todas as fichas já alocadas.</p>';
   }
 
-  // ===== Eventos =====
-
-  // Clique nos dias
   grid.addEventListener('click', e => {
     const dia = e.target.closest('.cal-day');
     if (!dia || dia.classList.contains('empty')) return;
@@ -427,7 +634,6 @@ trocarReceita(select.value);
     renderPainel(diaSelecionado);
   });
 
-  // Alocar / remover ficha
   document.getElementById('cal-day-panel').addEventListener('click', e => {
     const addBtn = e.target.closest('[data-add]');
     const remBtn = e.target.closest('[data-remove]');
@@ -436,7 +642,6 @@ trocarReceita(select.value);
     if (addBtn) {
       const id = addBtn.dataset.add;
       const st = statusEstoque(id);
-      // VALIDAÇÃO DE ESTOQUE antes de alocar
       if (st.classe === 'stock-out') {
         if (!confirm(`⚠️ "${id}" está sem estoque. Alocar mesmo assim?`)) return;
       }
@@ -453,7 +658,6 @@ trocarReceita(select.value);
     renderPainel(diaSelecionado);
   });
 
-  // Navegação de mês
   document.getElementById('cal-prev').addEventListener('click', () => {
     viewDate.setMonth(viewDate.getMonth() - 1); render();
   });
@@ -461,7 +665,6 @@ trocarReceita(select.value);
     viewDate.setMonth(viewDate.getMonth() + 1); render();
   });
 
-  // Abrir / fechar modal
   function abrir() { modal.classList.add('show'); render(); }
   function fechar() { modal.classList.remove('show'); }
 
@@ -469,9 +672,148 @@ trocarReceita(select.value);
   modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
 
-  // Liga os botões "Calendário" existentes
   document.querySelectorAll('.link-btn').forEach(btn => {
     if (btn.textContent.includes('Calendário')) btn.addEventListener('click', abrir);
   });
 })();
 
+// ============================================
+// ===== CENTRAL DE NOTIFICAÇÕES =====
+// ============================================
+(function () {
+  const btn   = $('notif-btn');
+  const panel = $('notif-panel');
+  const list  = $('notif-list');
+  const dot   = $('notif-dot');
+  const clear = $('notif-clear');
+
+  if (!btn || !panel || !list) return;
+
+  const lidas = new Set(JSON.parse(localStorage.getItem('sigec-notif-lidas') || '[]'));
+  const salvarLidas = () =>
+    localStorage.setItem('sigec-notif-lidas', JSON.stringify([...lidas]));
+
+  // Notificações manuais (ex.: solicitações enviadas)
+  const manuais = [];
+
+  function gerarAlertasBase() {
+    const alertas = [];
+
+    for (const key in receitas) {
+      const r = receitas[key];
+      const faltam = r.itens.filter(i => !i.ok);
+      if (faltam.length) {
+        alertas.push({
+          id: `insumo-${key}`, tipo: 'low', icone: 'inventory_2',
+          msg: `${r.nome}: ${faltam.length} insumo(s) a separar`,
+          time: r.local
+        });
+      }
+    }
+
+    for (const key in utensilios) {
+      const faltam = (utensilios[key] || []).filter(u => !u.ok);
+      if (faltam.length) {
+        const nome = receitas[key] ? receitas[key].nome : key;
+        alertas.push({
+          id: `util-${key}`, tipo: 'info', icone: 'blender',
+          msg: `${nome}: ${faltam.length} utensílio(s) a preparar`,
+          time: 'Checklist de utensílios'
+        });
+      }
+    }
+
+    alertas.push({
+      id: 'cd-atraso', tipo: 'cd', icone: 'local_shipping',
+      msg: 'Atraso do CD: entrega de insumos prevista pode atrasar.',
+      time: 'Hoje, 09:12'
+    });
+    alertas.push({
+      id: 'retirada', tipo: 'ret', icone: 'event_available',
+      msg: 'Hoje é dia de retirada de insumos da semana.',
+      time: 'Hoje'
+    });
+
+    return alertas;
+  }
+
+  // Junta manuais (no topo) + automáticas
+  function gerarAlertas() {
+    return [...manuais, ...gerarAlertasBase()];
+  }
+
+  function render() {
+    const alertas = gerarAlertas();
+    const naoLidas = alertas.filter(a => !lidas.has(a.id)).length;
+
+    if (naoLidas > 0) {
+      dot.style.display = 'flex';
+      dot.textContent = naoLidas > 9 ? '9+' : naoLidas;
+    } else {
+      dot.style.display = 'none';
+    }
+
+    if (!alertas.length) {
+      list.innerHTML = `
+        <div class="notif-empty">
+          <span class="material-symbols-outlined">notifications_off</span>
+          <p>Nenhuma notificação no momento.</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = alertas.map(a => `
+      <div class="notif-item ${lidas.has(a.id) ? 'read' : ''}" data-id="${a.id}">
+        <div class="notif-icon ${a.tipo}">
+          <span class="material-symbols-outlined">${a.icone}</span>
+        </div>
+        <div class="notif-content">
+          <p class="notif-msg">${a.msg}</p>
+          <p class="notif-time">${a.time}</p>
+        </div>
+        <span class="notif-unread"></span>
+      </div>
+    `).join('');
+  }
+
+  window.atualizarNotificacoes = render;
+
+  // Dispara notificação manual (usado nas solicitações)
+  window.adicionarNotificacaoManual = function (msg, icone = 'notifications') {
+    manuais.unshift({
+      id: `manual-${Date.now()}`, tipo: 'info', icone,
+      msg, time: new Date().toLocaleString('pt-BR')
+    });
+    render();
+  };
+
+  function toggle(open) {
+    panel.classList.toggle('show',
+      open !== undefined ? open : !panel.classList.contains('show'));
+  }
+
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+
+  list.addEventListener('click', e => {
+    const item = e.target.closest('.notif-item');
+    if (!item) return;
+    lidas.add(item.dataset.id);
+    salvarLidas();
+    render();
+  });
+
+  clear?.addEventListener('click', () => {
+    gerarAlertas().forEach(a => lidas.add(a.id));
+    salvarLidas();
+    render();
+  });
+
+  document.addEventListener('click', e => {
+    if (!panel.contains(e.target) && !e.target.closest('#notif-btn')) {
+      toggle(false);
+    }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
+
+  render();
+})();
