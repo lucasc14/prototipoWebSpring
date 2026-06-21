@@ -24,7 +24,7 @@
     <p class="nav-group">Menu</p>
     <a href="#" class="nav-item active"><span class="material-symbols-outlined">home</span><span>Início</span></a>
     <a href="#" class="nav-item"><span class="material-symbols-outlined">calendar_month</span><span>Calendário</span></a>
-    <a href="#" class="nav-item"><span class="material-symbols-outlined">menu_book</span><span>Receitas</span></a>   
+    <a href="#" class="nav-item"><span class="material-symbols-outlined">menu_book</span><span>Receitas</span></a>
   </nav>
   <div class="sidebar-footer">
     <button class="btn-logout"><span class="material-symbols-outlined">logout</span>Sair</button>
@@ -77,140 +77,148 @@
       <button class="qa-card"><span class="material-symbols-outlined">checklist</span><span>Lista de Utensílios</span></button>
     </section>
 
-    <!-- GRID PRINCIPAL -->
-    <!-- RECEITAS DO DIA (largura total) -->
-<section class="classes-col">
-  <div class="section-head split">
-    <div class="section-head plain">
-      <span class="material-symbols-outlined">today</span>
-      <h2 class="section-title">Receitas de Hoje</h2>
+    <!-- RECEITAS DO DIA -->
+    <section class="classes-col">
+      <div class="section-head split">
+        <div class="section-head plain">
+          <span class="material-symbols-outlined">today</span>
+          <h2 class="section-title">Receitas de Hoje</h2>
+        </div>
+        <button class="link-btn"><span class="material-symbols-outlined sm">calendar_month</span>Calendário</button>
+      </div>
+
+      <!-- Concluída -->
+      <div class="class-card done" data-recipe="confeitaria" data-turma="2024.1.C">
+        <div class="class-time"><p class="t-main">08:00</p><p class="t-end">12:00</p></div>
+        <div class="divider"></div>
+        <div class="class-info">
+          <p class="class-name">Técnicas Básicas de Confeitaria</p>
+          <p class="class-meta">Cozinha Pedagógica 02 • Turma 2024.1.C</p>
+        </div>
+        <span class="status status-done"><span class="material-symbols-outlined sm">check_circle</span>Concluída</span>
+      </div>
+
+      <!-- Em Curso -->
+      <div class="class-card running flight-accent" data-recipe="panificacao" data-turma="2024.1.A">
+        <div class="class-time"><p class="t-main c-secondary">13:30</p><p class="t-end">17:30</p></div>
+        <div class="divider sec"></div>
+        <div class="class-info">
+          <p class="class-name">Panificação Clássica Européia</p>
+          <p class="class-meta">Padaria Lab 01 • Turma 2024.1.A</p>
+          <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita &amp; checklist</button>
+        </div>
+        <span class="status status-running"><span class="material-symbols-outlined sm">timer</span>Em Curso</span>
+      </div>
+
+      <!-- Pendente -->
+      <div class="class-card" data-recipe="asia" data-turma="2024.2.N">
+        <div class="class-time"><p class="t-main">19:00</p><p class="t-end">22:30</p></div>
+        <div class="divider"></div>
+        <div class="class-info">
+          <p class="class-name">Cozinha Internacional: Ásia</p>
+          <p class="class-meta">Cozinha Pedagógica 04 • Turma 2024.2.N</p>
+          <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita &amp; checklist</button>
+        </div>
+        <span class="status status-pending">Pendente</span>
+      </div>
+    </section>
+
+    <!-- DOIS CHECKLISTS LADO A LADO -->
+    <div class="checklists-grid">
+
+      <!-- CHECKLIST DE INSUMOS -->
+      <section class="checklist-card">
+        <div class="checklist-head flight-accent">
+          <div class="ch-title-row">
+            <span class="material-symbols-outlined">checklist</span>
+            <h2 class="ch-title">Checklist de Insumos</h2>
+          </div>
+
+          <!-- ===== NOVO: SELETOR DE TURMA (RF06) ===== -->
+          <label class="field-label" for="turma-select">Turma / Laboratório</label>
+          <div class="select-wrap">
+            <select id="turma-select"></select>
+            <span class="material-symbols-outlined select-arrow">expand_more</span>
+          </div>
+
+          <label class="field-label" for="recipe-select">Selecione a aula / receita</label>
+          <div class="select-wrap">
+            <select id="recipe-select">
+              <option value="confeitaria">08:00 • Técnicas de Confeitaria</option>
+              <option value="panificacao" selected>13:30 • Panificação Clássica</option>
+              <option value="asia">19:00 • Cozinha Internacional: Ásia</option>
+            </select>
+            <span class="material-symbols-outlined select-arrow">expand_more</span>
+          </div>
+          <p class="ch-recipe">Receita: <strong id="recipe-name">—</strong></p>
+          <p class="ch-loc" id="recipe-loc">—</p>
+          <p class="ch-turma-badge" id="turma-badge">—</p>
+        </div>
+
+        <div class="progress-block">
+          <div class="progress-info">
+            <span class="bold" id="progress-text">0 de 0 itens</span>
+            <span class="muted"><span id="progress-pct">0</span>%</span>
+          </div>
+          <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
+        </div>
+
+        <div id="checklist" class="checklist-items"></div>
+
+        <div class="add-row">
+          <button class="btn-add" id="btn-add-insumo">
+            <span class="material-symbols-outlined">add</span>Adicionar insumo
+          </button>
+        </div>
+
+        <div class="checklist-footer">
+          <button id="btn-reset" class="btn-ghost">Limpar</button>
+          <button class="btn-confirm">Confirmar Separação</button>
+        </div>
+      </section>
+
+      <!-- CHECKLIST DE UTENSÍLIOS -->
+      <section class="checklist-card">
+        <div class="checklist-head flight-accent">
+          <div class="ch-title-row">
+            <span class="material-symbols-outlined">blender</span>
+            <h2 class="ch-title">Checklist de Utensílios</h2>
+          </div>
+          <p class="ch-recipe">Aula: <strong id="util-recipe-name">—</strong></p>
+          <p class="ch-loc" id="util-recipe-loc">—</p>
+          <p class="ch-turma-badge" id="util-turma-badge">—</p>
+        </div>
+
+        <div class="progress-block">
+          <div class="progress-info">
+            <span class="bold" id="util-progress-text">0 de 0 itens</span>
+            <span class="muted"><span id="util-progress-pct">0</span>%</span>
+          </div>
+          <div class="progress-track"><div id="util-progress-bar" class="progress-fill"></div></div>
+        </div>
+
+        <div id="util-checklist" class="checklist-items"></div>
+
+        <div class="add-row">
+          <button class="btn-add" id="btn-add-util">
+            <span class="material-symbols-outlined">add</span>Adicionar utensílio
+          </button>
+        </div>
+
+        <div class="checklist-footer">
+          <button id="util-btn-reset" class="btn-ghost">Limpar</button>
+          <button class="btn-confirm">Confirmar Utensílios</button>
+        </div>
+      </section>
+
     </div>
-    <button class="link-btn"><span class="material-symbols-outlined sm">calendar_month</span>Calendário</button>
+
   </div>
-
-  <!-- Concluída -->
-  <div class="class-card done" data-recipe="confeitaria">
-    <div class="class-time"><p class="t-main">08:00</p><p class="t-end">12:00</p></div>
-    <div class="divider"></div>
-    <div class="class-info">
-      <p class="class-name">Técnicas Básicas de Confeitaria</p>
-      <p class="class-meta">Cozinha Pedagógica 02 • Turma 2024.1.C</p>
-    </div>
-    <span class="status status-done"><span class="material-symbols-outlined sm">check_circle</span>Concluída</span>
-  </div>
-
-  <!-- Em Curso -->
-  <div class="class-card running flight-accent" data-recipe="panificacao">
-    <div class="class-time"><p class="t-main c-secondary">13:30</p><p class="t-end">17:30</p></div>
-    <div class="divider sec"></div>
-    <div class="class-info">
-      <p class="class-name">Panificação Clássica Européia</p>
-      <p class="class-meta">Padaria Lab 01 • Turma 2024.1.A</p>
-      <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita &amp; checklist</button>
-    </div>
-    <span class="status status-running"><span class="material-symbols-outlined sm">timer</span>Em Curso</span>
-  </div>
-
-  <!-- Pendente -->
-  <div class="class-card" data-recipe="asia">
-    <div class="class-time"><p class="t-main">19:00</p><p class="t-end">22:30</p></div>
-    <div class="divider"></div>
-    <div class="class-info">
-      <p class="class-name">Cozinha Internacional: Ásia</p>
-      <p class="class-meta">Cozinha Pedagógica 04 • Turma 2024.2.N</p>
-      <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita &amp; checklist</button>
-    </div>
-    <span class="status status-pending">Pendente</span>
-  </div>
-</section>
-
-<!-- DOIS CHECKLISTS LADO A LADO -->
-<div class="checklists-grid">
-
-  <!-- CHECKLIST DE INSUMOS -->
-  <section class="checklist-card">
-    <div class="checklist-head flight-accent">
-      <div class="ch-title-row">
-        <span class="material-symbols-outlined">checklist</span>
-        <h2 class="ch-title">Checklist de Insumos</h2>
-      </div>
-      <label class="field-label" for="recipe-select">Selecione a aula / receita</label>
-      <div class="select-wrap">
-        <select id="recipe-select">
-          <option value="confeitaria">08:00 • Técnicas de Confeitaria</option>
-          <option value="panificacao" selected>13:30 • Panificação Clássica</option>
-          <option value="asia">19:00 • Cozinha Internacional: Ásia</option>
-        </select>
-        <span class="material-symbols-outlined select-arrow">expand_more</span>
-      </div>
-      <p class="ch-recipe">Receita: <strong id="recipe-name">—</strong></p>
-      <p class="ch-loc" id="recipe-loc">—</p>
-    </div>
-
-    <div class="progress-block">
-      <div class="progress-info">
-        <span class="bold" id="progress-text">0 de 0 itens</span>
-        <span class="muted"><span id="progress-pct">0</span>%</span>
-      </div>
-      <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
-    </div>
-
-    <div id="checklist" class="checklist-items"></div>
-
-    <div class="add-row">
-      <button class="btn-add" id="btn-add-insumo">
-        <span class="material-symbols-outlined">add</span>Adicionar insumo
-      </button>
-    </div>
-
-    <div class="checklist-footer">
-      <button id="btn-reset" class="btn-ghost">Limpar</button>
-      <button class="btn-confirm">Confirmar Separação</button>
-    </div>
-  </section>
-
-  <!-- CHECKLIST DE UTENSÍLIOS -->
-  <section class="checklist-card">
-    <div class="checklist-head flight-accent">
-      <div class="ch-title-row">
-        <span class="material-symbols-outlined">blender</span>
-        <h2 class="ch-title">Checklist de Utensílios</h2>
-      </div>
-      <p class="ch-recipe">Aula: <strong id="util-recipe-name">—</strong></p>
-      <p class="ch-loc" id="util-recipe-loc">—</p>
-    </div>
-
-    <div class="progress-block">
-      <div class="progress-info">
-        <span class="bold" id="util-progress-text">0 de 0 itens</span>
-        <span class="muted"><span id="util-progress-pct">0</span>%</span>
-      </div>
-      <div class="progress-track"><div id="util-progress-bar" class="progress-fill"></div></div>
-    </div>
-
-    <div id="util-checklist" class="checklist-items"></div>
-
-    <div class="add-row">
-      <button class="btn-add" id="btn-add-util">
-        <span class="material-symbols-outlined">add</span>Adicionar utensílio
-      </button>
-    </div>
-
-    <div class="checklist-footer">
-      <button id="util-btn-reset" class="btn-ghost">Limpar</button>
-      <button class="btn-confirm">Confirmar Utensílios</button>
-    </div>
-  </section>
-
-</div>
-
-    
 </main>
 
 <!-- ===== MODAL CALENDÁRIO ===== -->
 <div class="cal-modal" id="cal-modal">
   <div class="cal-box">
-    <!-- Cabeçalho -->
     <div class="cal-header flight-accent">
       <div class="cal-title-row">
         <span class="material-symbols-outlined">calendar_month</span>
@@ -231,17 +239,13 @@
       </div>
     </div>
 
-    <!-- Corpo: grade + painel lateral -->
     <div class="cal-body">
-      <!-- Grade do calendário -->
       <div class="cal-grid-wrap">
         <div class="cal-weekdays">
           <span>Dom</span><span>Seg</span><span>Ter</span>
           <span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
         </div>
         <div class="cal-grid" id="cal-grid"></div>
-
-        <!-- Legenda -->
         <div class="cal-legend">
           <span><i class="dot dot-class"></i>Com aula</span>
           <span><i class="dot dot-holiday"></i>Feriado/Recesso</span>
@@ -249,19 +253,15 @@
         </div>
       </div>
 
-      <!-- Painel lateral do dia selecionado -->
       <aside class="cal-day-panel" id="cal-day-panel">
         <div class="cal-panel-empty" id="cal-panel-empty">
           <span class="material-symbols-outlined">event</span>
           <p>Clique em um dia para ver e alocar fichas.</p>
         </div>
-
         <div class="cal-panel-content" id="cal-panel-content" style="display:none">
           <p class="cal-panel-date" id="cal-panel-date">—</p>
-
           <h3 class="cal-sub">Fichas alocadas</h3>
           <div class="cal-allocated" id="cal-allocated"></div>
-
           <h3 class="cal-sub">Fichas disponíveis</h3>
           <div class="cal-available" id="cal-available"></div>
         </div>
@@ -269,7 +269,6 @@
     </div>
   </div>
 </div>
-
 
 <!-- MODAL DE OBSERVAÇÃO -->
 <div class="modal-overlay" id="obs-modal">
@@ -287,7 +286,6 @@
     </div>
   </div>
 </div>
-
 
 <div class="overlay" id="overlay"></div>
 <script src="script.js"></script>

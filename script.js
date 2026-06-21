@@ -1,110 +1,160 @@
 // ===== Configuração =====
 const LIMITE_SCROLL = 10;
 
-// ===== Base de dados =====
+// ===== ENTIDADES SEPARADAS (RF06) =====
+
+// Turmas / laboratórios independentes
+const turmas = {
+  "2024.1.A": { nome: "Turma 2024.1.A", cozinha: "Padaria Lab 01" },
+  "2024.1.C": { nome: "Turma 2024.1.C", cozinha: "Cozinha Pedagógica 02" },
+  "2024.2.N": { nome: "Turma 2024.2.N", cozinha: "Cozinha Pedagógica 04" }
+};
+
+// Catálogo de fichas/receitas (necessidades) — unidades em g/ml/un (RNF02)
 const receitas = {
   confeitaria: {
     nome: "Bolo de Cenoura com Cobertura",
     local: "08:00 • Cozinha Pedagógica 02",
     itens: [
-      { nome: "Cenoura Fresca",      qtd: "500 g", ok: true },
-      { nome: "Farinha de Trigo",    qtd: "2 kg",  ok: true },
-      { nome: "Açúcar Refinado",     qtd: "1 kg",  ok: true },
-      { nome: "Ovos",                qtd: "12 un", ok: true },
-      { nome: "Chocolate em Pó 50%", qtd: "300 g", ok: false },
-      { nome: "Formas de Bolo",      qtd: "6 un",  ok: false }
+      { id: "cenoura",   nome: "Cenoura Fresca",      necessario: 500,  unidade: "g" },
+      { id: "farinha",   nome: "Farinha de Trigo",    necessario: 2000, unidade: "g" },
+      { id: "acucar",    nome: "Açúcar Refinado",     necessario: 1000, unidade: "g" },
+      { id: "ovos",      nome: "Ovos",                necessario: 12,   unidade: "un" },
+      { id: "choco",     nome: "Chocolate em Pó 50%", necessario: 300,  unidade: "g" },
+      { id: "formas",    nome: "Formas de Bolo",      necessario: 6,    unidade: "un" }
     ]
   },
   panificacao: {
     nome: "Pão Francês & Baguete",
     local: "13:30 • Padaria Lab 01",
     itens: [
-      { nome: "Farinha de Trigo Tipo 1",   qtd: "5 kg",  ok: true },
-      { nome: "Fermento Biológico Fresco", qtd: "250 g", ok: true },
-      { nome: "Sal Refinado",              qtd: "100 g", ok: false },
-      { nome: "Melhorador de Farinha",     qtd: "50 g",  ok: false },
-      { nome: "Água Filtrada",             qtd: "3 L",   ok: false },
-      { nome: "Formas / Assadeiras",       qtd: "6 un",  ok: false }
+      { id: "farinha_t1", nome: "Farinha de Trigo Tipo 1",   necessario: 5000, unidade: "g" },
+      { id: "fermento",   nome: "Fermento Biológico Fresco", necessario: 250,  unidade: "g" },
+      { id: "sal",        nome: "Sal Refinado",              necessario: 100,  unidade: "g" },
+      { id: "melhorador", nome: "Melhorador de Farinha",     necessario: 50,   unidade: "g" },
+      { id: "agua",       nome: "Água Filtrada",             necessario: 3000, unidade: "ml" },
+      { id: "assadeiras", nome: "Formas / Assadeiras",       necessario: 6,    unidade: "un" }
     ]
   },
   asia: {
     nome: "Yakisoba & Tempurá de Legumes",
     local: "19:00 • Cozinha Pedagógica 04",
     itens: [
-      { nome: "Macarrão para Yakisoba", qtd: "2 kg",  ok: false },
-      { nome: "Molho Shoyu",            qtd: "1 L",   ok: false },
-      { nome: "Gengibre Fresco",        qtd: "200 g", ok: false },
-      { nome: "Legumes Variados",       qtd: "3 kg",  ok: false },
-      { nome: "Óleo para Fritura",      qtd: "5 L",   ok: false },
-      { nome: "Farinha Tempurá",        qtd: "1 kg",  ok: false },
-      { nome: "Camarão Médio",          qtd: "1 kg",  ok: false }
+      { id: "macarrao", nome: "Macarrão para Yakisoba", necessario: 2000, unidade: "g" },
+      { id: "shoyu",    nome: "Molho Shoyu",            necessario: 1000, unidade: "ml" },
+      { id: "gengibre", nome: "Gengibre Fresco",        necessario: 200,  unidade: "g" },
+      { id: "legumes",  nome: "Legumes Variados",       necessario: 3000, unidade: "g" },
+      { id: "oleo",     nome: "Óleo para Fritura",      necessario: 5000, unidade: "ml" },
+      { id: "tempura",  nome: "Farinha Tempurá",        necessario: 1000, unidade: "g" },
+      { id: "camarao",  nome: "Camarão Médio",          necessario: 1000, unidade: "g" }
     ]
   }
 };
 
-const utensilios = {
+// Catálogo de utensílios necessários por ficha
+const utensiliosFicha = {
   confeitaria: [
-    { nome: "Batedeira Planetária", qtd: "1 un", ok: true },
-    { nome: "Tigelas Inox",         qtd: "4 un", ok: true },
-    { nome: "Espátula de Silicone", qtd: "3 un", ok: false },
-    { nome: "Balança Digital",      qtd: "1 un", ok: false }
+    { id: "batedeira", nome: "Batedeira Planetária", necessario: 1, unidade: "un" },
+    { id: "tigelas",   nome: "Tigelas Inox",         necessario: 4, unidade: "un" },
+    { id: "espatula",  nome: "Espátula de Silicone", necessario: 3, unidade: "un" },
+    { id: "balanca",   nome: "Balança Digital",      necessario: 1, unidade: "un" }
   ],
   panificacao: [
-    { nome: "Masseira / Amassadeira",   qtd: "1 un", ok: true },
-    { nome: "Forno de Lastro",          qtd: "1 un", ok: false },
-    { nome: "Cestas de Fermentação",    qtd: "8 un", ok: false },
-    { nome: "Lâmina de Corte (grigne)", qtd: "2 un", ok: false }
+    { id: "masseira", nome: "Masseira / Amassadeira",   necessario: 1, unidade: "un" },
+    { id: "forno",    nome: "Forno de Lastro",          necessario: 1, unidade: "un" },
+    { id: "cestas",   nome: "Cestas de Fermentação",    necessario: 8, unidade: "un" },
+    { id: "lamina",   nome: "Lâmina de Corte (grigne)", necessario: 2, unidade: "un" }
   ],
   asia: [
-    { nome: "Wok",             qtd: "2 un", ok: false },
-    { nome: "Fritadeira",      qtd: "1 un", ok: false },
-    { nome: "Escumadeira",     qtd: "2 un", ok: false },
-    { nome: "Tábuas de Corte", qtd: "4 un", ok: false }
+    { id: "wok",        nome: "Wok",             necessario: 2, unidade: "un" },
+    { id: "fritadeira", nome: "Fritadeira",      necessario: 1, unidade: "un" },
+    { id: "escumadeira",nome: "Escumadeira",     necessario: 2, unidade: "un" },
+    { id: "tabuas",     nome: "Tábuas de Corte", necessario: 4, unidade: "un" }
   ]
 };
 
+// ===== ESTOQUE ISOLADO POR TURMA (RF06) =====
+// Cada turma tem sua própria quantidade disponível de insumos e utensílios.
+const estoquePorTurma = {
+  "2024.1.A": {
+    insumos:     { farinha_t1: 5000, fermento: 250, sal: 0, melhorador: 30, agua: 3000, assadeiras: 4 },
+    utensilios:  { masseira: 1, forno: 1, cestas: 4, lamina: 0 }
+  },
+  "2024.1.C": {
+    insumos:     { cenoura: 500, farinha: 2000, acucar: 1000, ovos: 12, choco: 100, formas: 0 },
+    utensilios:  { batedeira: 1, tigelas: 4, espatula: 0, balanca: 1 }
+  },
+  "2024.2.N": {
+    insumos:     { macarrao: 2000, shoyu: 1000, gengibre: 0, legumes: 1500, oleo: 5000, tempura: 1000, camarao: 0 },
+    utensilios:  { wok: 2, fritadeira: 1, escumadeira: 1, tabuas: 4 }
+  }
+};
+
+// Observações por turma+ficha (persistem por contexto)
+const observacoes = {}; // chave: `${turma}|${ficha}|${tipo}|${id}`
+
 // ===== Estado atual =====
 let receitaAtual;
+let turmaAtual;
 
 // ===== Helpers de DOM =====
 const $ = id => document.getElementById(id);
 
-// Configuração das duas listas (insumos e utensílios)
+// ===== Acesso ao estoque da turma ativa =====
+function estoqueDisponivel(tipo, id) {
+  const e = estoquePorTurma[turmaAtual];
+  if (!e) return 0;
+  return (tipo === 'util' ? e.utensilios : e.insumos)?.[id] ?? 0;
+}
+
+function statusItem(tipo, item) {
+  const disp = estoqueDisponivel(tipo, item.id);
+  if (disp >= item.necessario) return { st: 'ok',    label: 'OK',     ok: true  };
+  if (disp === 0)              return { st: 'falta', label: 'Falta',  ok: false };
+  return { st: 'baixo', label: `Falta ${item.necessario - disp}${item.unidade}`, ok: false };
+}
+
+function obsKey(tipo, id) { return `${turmaAtual}|${receitaAtual}|${tipo}|${id}`; }
+
+// ===== Configuração dos dois painéis =====
 const painels = {
   insumo: {
+    tipo: 'insumo',
     getItens: () => receitas[receitaAtual].itens,
-    lista:    $('checklist'),
-    name:     $('recipe-name'),
-    loc:      $('recipe-loc'),
-    pText:    $('progress-text'),
-    pPct:     $('progress-pct'),
-    pBar:     $('progress-bar'),
-    rotulo:   'Lista de insumos'
+    lista:  $('checklist'),
+    name:   $('recipe-name'),
+    loc:    $('recipe-loc'),
+    badge:  $('turma-badge'),
+    pText:  $('progress-text'),
+    pPct:   $('progress-pct'),
+    pBar:   $('progress-bar'),
+    rotulo: 'Lista de insumos'
   },
   util: {
-    getItens: () => utensilios[receitaAtual] || [],
-    lista:    $('util-checklist'),
-    name:     $('util-recipe-name'),
-    loc:      $('util-recipe-loc'),
-    pText:    $('util-progress-text'),
-    pPct:     $('util-progress-pct'),
-    pBar:     $('util-progress-bar'),
-    rotulo:   'Lista de utensílios'
+    tipo: 'util',
+    getItens: () => utensiliosFicha[receitaAtual] || [],
+    lista:  $('util-checklist'),
+    name:   $('util-recipe-name'),
+    loc:    $('util-recipe-loc'),
+    badge:  $('util-turma-badge'),
+    pText:  $('util-progress-text'),
+    pPct:   $('util-progress-pct'),
+    pBar:   $('util-progress-bar'),
+    rotulo: 'Lista de utensílios'
   }
 };
 
 const select = $('recipe-select');
+const turmaSelect = $('turma-select');
 
 // ===== Funções genéricas =====
 function aplicarScrollAdaptativo(container, qtd, rotulo) {
   const ativar = qtd > LIMITE_SCROLL;
   container.classList.toggle('is-scrollable', ativar);
-
   if (ativar) {
     container.setAttribute('role', 'region');
     container.setAttribute('tabindex', '0');
-    container.setAttribute('aria-label',
-      `${rotulo}: ${qtd} itens. Use as setas ou a rolagem para navegar.`);
+    container.setAttribute('aria-label', `${rotulo}: ${qtd} itens.`);
   } else {
     container.removeAttribute('role');
     container.removeAttribute('tabindex');
@@ -115,28 +165,36 @@ function aplicarScrollAdaptativo(container, qtd, rotulo) {
 function updateProgress(p) {
   const itens = p.getItens();
   const total = itens.length;
-  const done  = itens.filter(i => i.ok).length;
+  const done  = itens.filter(i => statusItem(p.tipo, i).ok).length;
   const pct   = total ? Math.round((done / total) * 100) : 0;
-  p.pText.textContent = `${done} de ${total} itens`;
+  p.pText.textContent = `${done} de ${total} itens em estoque`;
   p.pPct.textContent  = pct;
   p.pBar.style.width  = pct + '%';
 }
 
 function renderPainel(p) {
   const receita = receitas[receitaAtual];
+  const turma = turmas[turmaAtual];
   p.name.textContent = receita.nome;
   p.loc.textContent  = receita.local;
+  if (p.badge) p.badge.textContent = `${turma.nome} • ${turma.cozinha}`;
 
   const itens = p.getItens();
-  p.lista.innerHTML = itens.map((it, i) => `
-    <label class="check-item ${it.obs ? 'has-obs' : ''}">
-      <input type="checkbox" data-i="${i}" ${it.ok ? 'checked' : ''}>
-      <span class="check-box"><span class="material-symbols-outlined">check</span></span>
-      <span class="check-label" data-obs="${i}">${it.nome}</span>
-      <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
-      <span class="check-qty">${it.qtd}</span>
-    </label>
-  `).join('');
+  p.lista.innerHTML = itens.map((it) => {
+    const disp = estoqueDisponivel(p.tipo, it.id);
+    const s = statusItem(p.tipo, it);
+    const obs = observacoes[obsKey(p.tipo, it.id)];
+    const clsEstoque = s.st === 'ok' ? '' : (s.st === 'falta' ? 'estoque-falta' : 'estoque-baixo');
+    return `
+      <label class="check-item ${obs ? 'has-obs' : ''} ${clsEstoque}">
+        <input type="checkbox" data-id="${it.id}" ${s.ok ? 'checked' : ''} disabled>
+        <span class="check-box"><span class="material-symbols-outlined">check</span></span>
+        <span class="check-label" data-obs="${it.id}">${it.nome}</span>
+        <span class="obs-flag" title="${obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+        <span class="estoque-tag ${s.st}">${s.label}</span>
+        <span class="check-qty">${disp}/${it.necessario}${it.unidade}</span>
+      </label>`;
+  }).join('');
 
   updateProgress(p);
   aplicarScrollAdaptativo(p.lista, itens.length, p.rotulo);
@@ -147,47 +205,51 @@ function renderTudo() {
   renderPainel(painels.util);
 }
 
-// ===== Listeners por painel (marcar, limpar, observação) =====
-function configurarPainel(tipo, p, btnAddId, btnResetId) {
-  // Marcar / desmarcar
-  p.lista.addEventListener('change', e => {
-    if (e.target.matches('input[type=checkbox]')) {
-      p.getItens()[e.target.dataset.i].ok = e.target.checked;
-      updateProgress(p);
-    }
-  });
-
-  // Abrir modal de observação ao clicar no nome
+// ===== Listeners por painel (observação, adicionar) =====
+function configurarPainel(p, btnAddId, btnResetId) {
+  // Observação ao clicar no nome
   p.lista.addEventListener('click', e => {
     const label = e.target.closest('.check-label');
     if (label) {
       e.preventDefault();
-      abrirObs(tipo, Number(label.dataset.obs));
+      abrirObs(p.tipo, label.dataset.obs);
     }
   });
 
-  // Limpar
+  // "Limpar" = zera o estoque dos itens desta ficha (na turma atual)
   $(btnResetId).addEventListener('click', () => {
-    p.getItens().forEach(i => i.ok = false);
+    const e = estoquePorTurma[turmaAtual];
+    const bucket = p.tipo === 'util' ? e.utensilios : e.insumos;
+    p.getItens().forEach(i => bucket[i.id] = 0);
     renderPainel(p);
   });
 
-  // Adicionar
+  // Adicionar insumo/utensílio à ficha + estoque da turma
   $(btnAddId).addEventListener('click', () => {
-    const label = tipo === 'util' ? 'utensílio' : 'insumo';
+    const label = p.tipo === 'util' ? 'utensílio' : 'insumo';
     const nome = prompt(`Nome do ${label}:`);
     if (!nome || !nome.trim()) return;
-    const qtd = prompt('Quantidade (ex.: 500 g, 2 un, 1 L):') || '';
-    if (tipo === 'util' && !utensilios[receitaAtual]) utensilios[receitaAtual] = [];
-    p.getItens().push({ nome: nome.trim(), qtd: qtd.trim(), ok: false });
+    const necessario = parseFloat(prompt('Quantidade necessária (número):')) || 0;
+    const unidade = (prompt('Unidade (g, ml, un):') || 'un').trim();
+    const disp = parseFloat(prompt(`Quanto há em estoque na ${turmas[turmaAtual].nome}?`)) || 0;
+    const id = 'item_' + Date.now();
+
+    const catalogo = p.tipo === 'util' ? utensiliosFicha : null;
+    if (p.tipo === 'util') {
+      (utensiliosFicha[receitaAtual] = utensiliosFicha[receitaAtual] || []);
+    }
+    p.getItens().push({ id, nome: nome.trim(), necessario, unidade });
+
+    const e = estoquePorTurma[turmaAtual];
+    (p.tipo === 'util' ? e.utensilios : e.insumos)[id] = disp;
     renderPainel(p);
   });
 }
 
-configurarPainel('insumo', painels.insumo, 'btn-add-insumo', 'btn-reset');
-configurarPainel('util',   painels.util,   'btn-add-util',   'util-btn-reset');
+configurarPainel(painels.insumo, 'btn-add-insumo', 'btn-reset');
+configurarPainel(painels.util,   'btn-add-util',   'util-btn-reset');
 
-// ===== Troca de receita =====
+// ===== Troca de receita / turma =====
 function trocarReceita(key) {
   receitaAtual = key;
   select.value = key;
@@ -195,14 +257,27 @@ function trocarReceita(key) {
   highlightCard(key);
 }
 
-select.addEventListener('change', e => trocarReceita(e.target.value));
+function trocarTurma(key) {
+  turmaAtual = key;
+  turmaSelect.value = key;
+  renderTudo();
+}
 
-// ===== Links "Ver receita & checklist" nos cards =====
+select.addEventListener('change', e => trocarReceita(e.target.value));
+turmaSelect.addEventListener('change', e => trocarTurma(e.target.value));
+
+// Popular o <select> de turmas
+turmaSelect.innerHTML = Object.entries(turmas)
+  .map(([k, t]) => `<option value="${k}">${t.nome} — ${t.cozinha}</option>`).join('');
+
+// ===== Links "Ver receita & checklist" — trocam receita E turma do card =====
 document.querySelectorAll('.class-card').forEach(card => {
   const recipeKey = card.dataset.recipe;
+  const turmaKey  = card.dataset.turma;
   const link = card.querySelector('.recipe-link');
   if (link && recipeKey) {
     link.addEventListener('click', () => {
+      if (turmaKey && turmas[turmaKey]) trocarTurma(turmaKey);
       trocarReceita(recipeKey);
       painels.insumo.lista.closest('.checklist-card')
         .scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -235,34 +310,33 @@ document.querySelectorAll('button').forEach(el => {
   el.addEventListener('mouseleave', () => el.style.transform = 'scale(1)');
 });
 
-// ===== Modal de observação (insumos + utensílios) =====
+// ===== Modal de observação (por turma + ficha) =====
 const obsModal = $('obs-modal');
 const obsName  = $('obs-item-name');
 const obsText  = $('obs-text');
-let obsIndexAtual = null;
-let obsTipoAtual  = null;
+let obsIdAtual   = null;
+let obsTipoAtual = null;
 
-function abrirObs(tipo, i) {
-  obsTipoAtual  = tipo;
-  obsIndexAtual = i;
-  const item = painels[tipo].getItens()[i];
-  obsName.textContent = item.nome;
-  obsText.value = item.obs || '';
+function abrirObs(tipo, id) {
+  obsTipoAtual = tipo;
+  obsIdAtual   = id;
+  const item = painels[tipo].getItens().find(i => i.id === id);
+  obsName.textContent = item ? item.nome : '';
+  obsText.value = observacoes[obsKey(tipo, id)] || '';
   obsModal.classList.add('show');
   obsText.focus();
 }
 
 function fecharObs() {
   obsModal.classList.remove('show');
-  obsIndexAtual = null;
-  obsTipoAtual  = null;
+  obsIdAtual = null;
+  obsTipoAtual = null;
 }
 
 $('obs-save').addEventListener('click', () => {
-  if (obsIndexAtual !== null && obsTipoAtual) {
-    const p = painels[obsTipoAtual];
-    p.getItens()[obsIndexAtual].obs = obsText.value.trim();
-    renderPainel(p);
+  if (obsIdAtual && obsTipoAtual) {
+    observacoes[obsKey(obsTipoAtual, obsIdAtual)] = obsText.value.trim();
+    renderPainel(painels[obsTipoAtual]);
   }
   fecharObs();
 });
@@ -273,6 +347,7 @@ obsModal.addEventListener('click', e => { if (e.target === obsModal) fecharObs()
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharObs(); });
 
 // ===== Inicialização =====
+trocarTurma('2024.1.A');
 trocarReceita(select.value);
 
 // ===== CALENDÁRIO INTERATIVO =====
@@ -280,50 +355,50 @@ trocarReceita(select.value);
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-  // Feriados/recesso fixos (MM-DD) — ajuste conforme calendário do Senac
   const FERIADOS = {
     '01-01': 'Ano Novo', '04-21': 'Tiradentes', '05-01': 'Trabalho',
     '09-07': 'Independência', '10-12': 'N. Sra.', '11-15': 'República',
     '12-25': 'Natal', '06-19': 'Recesso', '07-09': 'Recesso'
   };
 
-  // Fichas disponíveis no plano de curso (usa suas receitas existentes)
   const fichasDisponiveis = [
-    { id: 'confeitaria', nome: 'Técnicas de Confeitaria' },
-    { id: 'panificacao', nome: 'Panificação Clássica' },
-    { id: 'asia',        nome: 'Cozinha Internacional: Ásia' }
+    { id: 'confeitaria', nome: 'Técnicas de Confeitaria', turma: '2024.1.C' },
+    { id: 'panificacao', nome: 'Panificação Clássica',    turma: '2024.1.A' },
+    { id: 'asia',        nome: 'Cozinha Internacional: Ásia', turma: '2024.2.N' }
   ];
 
-  // Fichas alocadas por data { 'YYYY-MM-DD': ['confeitaria', ...] }
   const alocacoes = JSON.parse(localStorage.getItem('sigec-alocacoes') || '{}');
   function salvar() { localStorage.setItem('sigec-alocacoes', JSON.stringify(alocacoes)); }
 
-  // Estado
-  let viewDate = new Date(2026, 5, 1); // Junho/2026
+  let viewDate = new Date(2026, 5, 1);
   let diaSelecionado = null;
 
-  // Elementos
   const modal   = document.getElementById('cal-modal');
   const grid    = document.getElementById('cal-grid');
   const monthEl = document.getElementById('cal-month');
 
-  // Helpers de data
   const pad = n => String(n).padStart(2, '0');
   const chave = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const mmdd  = d => `${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-  // Verifica estoque de uma ficha (integra com `receitas`)
-  function statusEstoque(id) {
-    const r = receitas[id];
+  // Estoque calculado no contexto da TURMA daquela ficha (RF06)
+  function statusEstoque(ficha) {
+    const r = receitas[ficha.id];
     if (!r) return { classe: 'stock-out', txt: 'Sem ficha' };
+    const e = estoquePorTurma[ficha.turma];
+    if (!e) return { classe: 'stock-out', txt: 'Turma sem estoque' };
     const total = r.itens.length;
-    const ok = r.itens.filter(i => i.ok).length;
+    let ok = 0, algum = 0;
+    r.itens.forEach(it => {
+      const disp = e.insumos?.[it.id] ?? 0;
+      if (disp >= it.necessario) ok++;
+      if (disp > 0) algum++;
+    });
     if (ok === total) return { classe: 'stock-ok',  txt: 'Estoque OK' };
-    if (ok === 0)     return { classe: 'stock-out', txt: 'Sem estoque' };
+    if (algum === 0)  return { classe: 'stock-out', txt: 'Sem estoque' };
     return { classe: 'stock-low', txt: `${total - ok} item(s) em falta` };
   }
 
-  // Renderiza a grade do mês
   function render() {
     const ano = viewDate.getFullYear();
     const mes = viewDate.getMonth();
@@ -361,8 +436,7 @@ trocarReceita(select.value);
     grid.innerHTML = html;
   }
 
-  // Renderiza painel lateral do dia
-  function renderPainel(k) {
+  function renderPainelCal(k) {
     document.getElementById('cal-panel-empty').style.display = 'none';
     document.getElementById('cal-panel-content').style.display = 'block';
 
@@ -371,16 +445,15 @@ trocarReceita(select.value);
     document.getElementById('cal-panel-date').textContent =
       data.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
 
-    // Alocadas
     const aulas = alocacoes[k] || [];
     const elAloc = document.getElementById('cal-allocated');
     elAloc.innerHTML = aulas.length ? aulas.map(id => {
       const f = fichasDisponiveis.find(x => x.id === id);
-      const st = statusEstoque(id);
+      const st = statusEstoque(f || { id });
       return `
         <div class="cal-fiche">
           <div class="cal-fiche-info">
-            <p class="cal-fiche-name">${f ? f.nome : id}</p>
+            <p class="cal-fiche-name">${f ? f.nome : id} <small>(${f ? f.turma : ''})</small></p>
             <p class="cal-fiche-stock ${st.classe}">
               <span class="material-symbols-outlined sm">inventory_2</span>${st.txt}
             </p>
@@ -391,15 +464,14 @@ trocarReceita(select.value);
         </div>`;
     }).join('') : '<p class="cal-empty-text">Nenhuma ficha alocada.</p>';
 
-    // Disponíveis (não alocadas neste dia)
     const elDisp = document.getElementById('cal-available');
     const livres = fichasDisponiveis.filter(f => !aulas.includes(f.id));
     elDisp.innerHTML = livres.length ? livres.map(f => {
-      const st = statusEstoque(f.id);
+      const st = statusEstoque(f);
       return `
         <div class="cal-fiche">
           <div class="cal-fiche-info">
-            <p class="cal-fiche-name">${f.nome}</p>
+            <p class="cal-fiche-name">${f.nome} <small>(${f.turma})</small></p>
             <p class="cal-fiche-stock ${st.classe}">
               <span class="material-symbols-outlined sm">inventory_2</span>${st.txt}
             </p>
@@ -411,9 +483,6 @@ trocarReceita(select.value);
     }).join('') : '<p class="cal-empty-text">Todas as fichas já alocadas.</p>';
   }
 
-  // ===== Eventos =====
-
-  // Clique nos dias
   grid.addEventListener('click', e => {
     const dia = e.target.closest('.cal-day');
     if (!dia || dia.classList.contains('empty')) return;
@@ -424,10 +493,9 @@ trocarReceita(select.value);
     grid.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
     dia.classList.add('selected');
     diaSelecionado = dia.dataset.date;
-    renderPainel(diaSelecionado);
+    renderPainelCal(diaSelecionado);
   });
 
-  // Alocar / remover ficha
   document.getElementById('cal-day-panel').addEventListener('click', e => {
     const addBtn = e.target.closest('[data-add]');
     const remBtn = e.target.closest('[data-remove]');
@@ -435,10 +503,10 @@ trocarReceita(select.value);
 
     if (addBtn) {
       const id = addBtn.dataset.add;
-      const st = statusEstoque(id);
-      // VALIDAÇÃO DE ESTOQUE antes de alocar
+      const f = fichasDisponiveis.find(x => x.id === id);
+      const st = statusEstoque(f || { id });
       if (st.classe === 'stock-out') {
-        if (!confirm(`⚠️ "${id}" está sem estoque. Alocar mesmo assim?`)) return;
+        if (!confirm(`⚠️ "${f ? f.nome : id}" está sem estoque na turma. Alocar mesmo assim?`)) return;
       }
       (alocacoes[diaSelecionado] = alocacoes[diaSelecionado] || []).push(id);
     }
@@ -450,10 +518,9 @@ trocarReceita(select.value);
     salvar();
     render();
     grid.querySelector(`[data-date="${diaSelecionado}"]`)?.classList.add('selected');
-    renderPainel(diaSelecionado);
+    renderPainelCal(diaSelecionado);
   });
 
-  // Navegação de mês
   document.getElementById('cal-prev').addEventListener('click', () => {
     viewDate.setMonth(viewDate.getMonth() - 1); render();
   });
@@ -461,7 +528,6 @@ trocarReceita(select.value);
     viewDate.setMonth(viewDate.getMonth() + 1); render();
   });
 
-  // Abrir / fechar modal
   function abrir() { modal.classList.add('show'); render(); }
   function fechar() { modal.classList.remove('show'); }
 
@@ -469,9 +535,7 @@ trocarReceita(select.value);
   modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
 
-  // Liga os botões "Calendário" existentes
   document.querySelectorAll('.link-btn').forEach(btn => {
     if (btn.textContent.includes('Calendário')) btn.addEventListener('click', abrir);
   });
 })();
-

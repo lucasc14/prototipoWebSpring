@@ -377,3 +377,25 @@ body{
   .cal-grid{grid-auto-rows:64px}        /* 🔧 CORRIGIDO: altura menor no mobile */
   .cal-day{min-height:64px;padding:4px}
 }
+/* ===== SELETOR DE TURMA + BADGE (RF06) ===== */
+#turma-select{
+  width:100%;appearance:none;background:#fff;color:var(--primary);
+  border:1px solid var(--outline-variant);border-radius:var(--r);
+  padding:11px 36px 11px 12px;font-size:14px;font-weight:600;cursor:pointer;
+  outline:none;transition:.2s}
+#turma-select:focus{border-bottom:2px solid var(--secondary-container)}
+
+.ch-turma-badge{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  background:var(--primary-container);color:#fff;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  padding:5px 12px;border-radius:var(--r-full)}
+
+/* Item insuficiente / em falta no estoque da turma */
+.check-item.estoque-baixo{border-color:var(--secondary-container);background:var(--secondary-fixed)}
+.check-item.estoque-falta{border-color:var(--error);background:var(--error-container)}
+.estoque-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+  padding:2px 8px;border-radius:var(--r-full);flex-shrink:0}
+.estoque-tag.ok{background:#dcfce7;color:#15803d}
+.estoque-tag.baixo{background:#fff;color:var(--secondary);border:1px solid var(--secondary-container)}
+.estoque-tag.falta{background:#fff;color:var(--error);border:1px solid var(--error)}
