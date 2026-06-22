@@ -168,6 +168,7 @@ const observacoes = {}; // chave: `${turma}|${ficha}|${tipo}|${id}`
 
 // ===== Estado atual =====
 let receitaAtual;
+let turmaAtual;
 
 // ===== Helpers de DOM =====
 const $ = id => document.getElementById(id);
@@ -206,6 +207,7 @@ const painels = {
     tipo: 'insumo', 
     getItens: () => receitas[receitaAtual].itens,
     lista: $('checklist-exe'), 
+    /* name, loc e badge são atualizados pelo 'rec', os de progresso ficam separados */
     pText: $('exe-progress-text'), 
     pPct: $('exe-progress-pct'), 
     pBar: $('exe-progress-bar'),
@@ -226,6 +228,7 @@ const painels = {
 };
 
 const select = $('recipe-select');
+const turmaSelect = $('turma-select');
 
 // ===== Funções genéricas =====
 function aplicarScrollAdaptativo(container, qtd, rotulo) {
@@ -245,11 +248,11 @@ function aplicarScrollAdaptativo(container, qtd, rotulo) {
 function updateProgress(p) {
   const itens = p.getItens();
   const total = itens.length;
-  const done  = itens.filter(i => i.ok).length;
+  const done  = itens.filter(i => statusItem(p.tipo, i).ok).length;
   const pct   = total ? Math.round((done / total) * 100) : 0;
-  p.pText.textContent = `${done} de ${total} itens`;
-  p.pPct.textContent  = pct;
-  p.pBar.style.width  = pct + '%';
+  if(p.pText) p.pText.textContent = `${done} de ${total} itens em estoque`;
+  if(p.pPct)  p.pPct.textContent  = pct;
+  if(p.pBar)  p.pBar.style.width  = pct + '%';
 }
 
 function renderPainel(p) {
@@ -258,24 +261,30 @@ function renderPainel(p) {
 
   if (!receita || !turma) return;
 
+  // Atualiza infos de cabeçalho apenas se o painel as tiver (o painel 'exe' reaproveita do 'rec')
   if (p.name) p.name.textContent = receita.nome;
   if (p.loc) p.loc.textContent  = receita.local;
   if (p.badge) p.badge.textContent = `${turma.nome} • ${turma.cozinha}`;
 
   const itens = p.getItens();
-  p.lista.innerHTML = itens.map((it, i) => `
-    <label class="check-item ${it.obs ? 'has-obs' : ''}">
-      <input type="checkbox" data-i="${i}" ${it.ok ? 'checked' : ''}>
-      <span class="check-box"><span class="material-symbols-outlined">check</span></span>
-      <span class="check-label" data-obs="${i}">${it.nome}</span>
-      <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
-      <span class="check-qty">${it.qtd}</span>
-    </label>
-  `).join('');
+  p.lista.innerHTML = itens.map((it) => {
+    const disp = estoqueDisponivel(p.tipo, it.id);
+    const s = statusItem(p.tipo, it);
+    const obs = observacoes[obsKey(p.tipo, it.id)];
+    const clsEstoque = s.st === 'ok' ? '' : (s.st === 'falta' ? 'estoque-falta' : 'estoque-baixo');
+    return `
+      <label class="check-item ${obs ? 'has-obs' : ''} ${clsEstoque}">
+        <input type="checkbox" data-id="${it.id}" ${s.ok ? 'checked' : ''} disabled>
+        <span class="check-box"><span class="material-symbols-outlined">check</span></span>
+        <span class="check-label" data-obs="${it.id}">${it.nome}</span>
+        <span class="obs-flag" title="${obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+        <span class="estoque-tag ${s.st}">${s.label}</span>
+        <span class="check-qty">${disp}/${it.necessario}${it.unidade}</span>
+      </label>`;
+  }).join('');
 
-  p.lista.innerHTML = html;
   updateProgress(p);
-  aplicarScrollAdaptativo(p.lista, itens.length + solics.length, p.rotulo);
+  aplicarScrollAdaptativo(p.lista, itens.length, p.rotulo);
 }
 
 function renderTudo() {
@@ -284,64 +293,56 @@ function renderTudo() {
   renderPainel(painels.util);
 }
 
-// ===== Listeners por painel (marcar, limpar, observação) =====
-function configurarPainel(tipo, p, btnAddId, btnResetId) {
-  // Marcar / desmarcar
-  p.lista.addEventListener('change', e => {
-    if (e.target.matches('input[type=checkbox]')) {
-      p.getItens()[e.target.dataset.i].ok = e.target.checked;
-      updateProgress(p);
-    }
-  });
-
-  // Abrir modal de observação ao clicar no nome
+// ===== Listeners por painel =====
+function configurarPainel(p, btnAddId, btnResetId) {
   p.lista.addEventListener('click', e => {
-    // Registrar avaria (modo recebimento)
-    const avBtn = e.target.closest('[data-avaria]');
-    if (avBtn) {
-      e.preventDefault();
-      abrirAvaria(tipo, Number(avBtn.dataset.avaria));
-      return;
-    }
-    // Remover solicitação adicional
-    const delBtn = e.target.closest('[data-del-solic]');
-    if (delBtn) {
-      e.preventDefault();
-      if (confirm('Remover esta solicitação?')) {
-        getSolic(receitaAtual, tipo).splice(Number(delBtn.dataset.delSolic), 1);
-        salvarSolicitacoes();
-        renderPainel(p);
-      }
-      return;
-    }
-    // Observação
     const label = e.target.closest('.check-label');
-    if (label && label.dataset.obs !== undefined) {
+    if (label) {
       e.preventDefault();
       abrirObs(p.tipo, label.dataset.obs);
     }
   });
 
-  // Limpar
-  $(btnResetId).addEventListener('click', () => {
-    p.getItens().forEach(i => i.ok = false);
-    renderPainel(p);
-  });
+  if(btnResetId && $(btnResetId)) {
+    $(btnResetId).addEventListener('click', () => {
+      const e = estoquePorTurma[turmaAtual];
+      const bucket = p.tipo === 'util' ? e.utensilios : e.insumos;
+      p.getItens().forEach(i => bucket[i.id] = 0);
+      renderPainel(p);
+      // Força a renderização do outro painel dependente para sincronizar a view
+      if(p === painels.rec || p === painels.exe) {
+        renderPainel(painels.rec);
+        renderPainel(painels.exe);
+      }
+    });
+  }
 
-  // Adicionar
-  $(btnAddId).addEventListener('click', () => {
-    const label = tipo === 'util' ? 'utensílio' : 'insumo';
-    const nome = prompt(`Nome do ${label}:`);
-    if (!nome || !nome.trim()) return;
-    const qtd = prompt('Quantidade (ex.: 500 g, 2 un, 1 L):') || '';
-    if (tipo === 'util' && !utensilios[receitaAtual]) utensilios[receitaAtual] = [];
-    p.getItens().push({ nome: nome.trim(), qtd: qtd.trim(), ok: false });
-    renderPainel(p);
-  });
+  if(btnAddId && $(btnAddId)) {
+    $(btnAddId).addEventListener('click', () => {
+      const label = p.tipo === 'util' ? 'utensílio' : 'insumo';
+      const nome = prompt(`Nome do ${label}:`);
+      if (!nome || !nome.trim()) return;
+      const necessario = parseFloat(prompt('Quantidade necessária (número):')) || 0;
+      const unidade = (prompt('Unidade (g, ml, un):') || 'un').trim();
+      const disp = parseFloat(prompt(`Quanto há em estoque na ${turmas[turmaAtual].nome}?`)) || 0;
+      const id = 'item_' + Date.now();
+
+      if (p.tipo === 'util') {
+        (utensiliosFicha[receitaAtual] = utensiliosFicha[receitaAtual] || []);
+      }
+      p.getItens().push({ id, nome: nome.trim(), necessario, unidade });
+
+      const e = estoquePorTurma[turmaAtual];
+      (p.tipo === 'util' ? e.utensilios : e.insumos)[id] = disp;
+      renderPainel(p);
+      if(p === painels.rec) renderPainel(painels.exe);
+    });
+  }
 }
 
-configurarPainel('insumo', painels.insumo, 'btn-add-insumo', 'btn-reset');
-configurarPainel('util',   painels.util,   'btn-add-util',   'util-btn-reset');
+configurarPainel(painels.rec, 'btn-add-insumo', null); 
+configurarPainel(painels.exe, null, 'btn-reset'); 
+configurarPainel(painels.util, 'btn-add-util', 'util-btn-reset');
 
 // ===== Troca de receita / turma =====
 function trocarReceita(key) {
@@ -353,6 +354,7 @@ function trocarReceita(key) {
   highlightCard(key);
 }
 
+// Popula o <select> de receitas conforme a turma ativa
 function popularReceitasDaTurma(turmaKey) {
   const permitidas = receitasPorTurma[turmaKey] || Object.keys(receitas);
   select.innerHTML = permitidas
@@ -379,6 +381,7 @@ function trocarTurma(key) {
 select.addEventListener('change', e => trocarReceita(e.target.value));
 turmaSelect.addEventListener('change', e => trocarTurma(e.target.value));
 
+// Popular o <select> de turmas
 turmaSelect.innerHTML = Object.entries(turmas)
   .map(([k, t]) => `<option value="${k}">${t.nome} — ${t.cozinha}</option>`).join('');
 
@@ -432,6 +435,7 @@ let obsTipoAtual = null;
 function abrirObs(tipo, id) {
   obsTipoAtual = tipo;
   obsIdAtual   = id;
+  // Fallback: se for aba de recebimento ou execução, usa painels.rec para puxar os itens
   const panel = painels[tipo] || painels.rec; 
   const item = panel.getItens().find(i => i.id === id);
   obsName.textContent = item ? item.nome : '';
@@ -462,12 +466,32 @@ $('obs-save').addEventListener('click', () => {
 $('obs-close').addEventListener('click', fecharObs);
 $('obs-cancel').addEventListener('click', fecharObs);
 obsModal.addEventListener('click', e => { if (e.target === obsModal) fecharObs(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && obsModal.classList.contains('show')) fecharObs(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharObs(); });
+
+// ===== LÓGICA DE ABAS (TABS) DO CHECKLIST =====
+document.querySelectorAll('.ch-tab').forEach(tab => {
+  tab.addEventListener('click', (e) => {
+    const targetId = e.target.dataset.target;
+    // Remove classe ativa de todas as abas e conteúdos
+    document.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ch-tab-content').forEach(c => c.classList.remove('active'));
+    // Adiciona classe ativa no alvo clicado
+    e.target.classList.add('active');
+    document.getElementById(targetId).classList.add('active');
+  });
+});
 
 // ===== Inicialização =====
-trocarReceita(select.value);
+turmaAtual   = '2024.1.A';
+turmaSelect.value = turmaAtual;
+popularReceitasDaTurma(turmaAtual);
+receitaAtual = (receitasPorTurma[turmaAtual] || Object.keys(receitas))[0];
+select.value = receitaAtual;
 
-// ===== CALENDÁRIO INTERATIVO =====
+renderTudo();
+highlightCard(receitaAtual);
+
+// ===== CALENDÁRIO INTERATIVO (FILTRO ÚNICO: COZINHA) =====
 (function () {
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -478,33 +502,53 @@ trocarReceita(select.value);
     '12-25': 'Natal', '06-19': 'Recesso', '07-09': 'Recesso'
   };
 
-  // Fichas disponíveis no plano de curso (usa suas receitas existentes)
+  // Mapa: cozinha (texto da turma) -> value do <select id="cal-kitchen">
+  const cozinhaToValue = {
+    "Padaria Lab 01":        "lab01",
+    "Cozinha Pedagógica 02": "lab02",
+    "Cozinha Pedagógica 04": "lab04"
+  };
+
+  // Agora com 2 fichas por turma
   const fichasDisponiveis = [
-    { id: 'confeitaria', nome: 'Técnicas de Confeitaria' },
-    { id: 'panificacao', nome: 'Panificação Clássica' },
-    { id: 'asia',        nome: 'Cozinha Internacional: Ásia' }
+    { id: 'confeitaria_bolo',     nome: 'Confeitaria: Bolo de Cenoura', turma: '2024.1.C' },
+    { id: 'confeitaria_torta',    nome: 'Confeitaria: Torta de Maçã',   turma: '2024.1.C' },
+    { id: 'panificacao_pao',      nome: 'Panificação: Pão & Baguete',   turma: '2024.1.A' },
+    { id: 'panificacao_brioche',  nome: 'Panificação: Brioche',         turma: '2024.1.A' },
+    { id: 'asia_yakisoba',        nome: 'Ásia: Yakisoba & Tempurá',     turma: '2024.2.N' },
+    { id: 'asia_sushi',           nome: 'Ásia: Sushi & Sashimi',        turma: '2024.2.N' }
   ];
 
-  // Fichas alocadas por data { 'YYYY-MM-DD': ['confeitaria', ...] }
   const alocacoes = JSON.parse(localStorage.getItem('sigec-alocacoes') || '{}');
   function salvar() { localStorage.setItem('sigec-alocacoes', JSON.stringify(alocacoes)); }
 
   let viewDate = new Date(2026, 5, 1);
   let diaSelecionado = null;
 
-  // Elementos
-  const modal   = document.getElementById('cal-modal');
-  const grid    = document.getElementById('cal-grid');
-  const monthEl = document.getElementById('cal-month');
+  // Estado do filtro do calendário (APENAS COZINHA)
+  let calFiltroCozinha = 'todas';
 
-  // Helpers de data
+  const modal      = document.getElementById('cal-modal');
+  const grid       = document.getElementById('cal-grid');
+  const monthEl    = document.getElementById('cal-month');
+  const kitchenSel = document.getElementById('cal-kitchen');
+
   const pad = n => String(n).padStart(2, '0');
   const chave = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const mmdd  = d => `${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-  // Verifica estoque de uma ficha (integra com `receitas`)
-  function statusEstoque(id) {
-    const r = receitas[id];
+  // ----- FILTRO POR COZINHA -----
+
+  // Retorna true se a ficha passa pelo filtro de cozinha
+  function fichaPassaFiltro(f) {
+    if (!f) return false;
+    const turmaInfo = turmas[f.turma];
+    const cozValue = turmaInfo ? (cozinhaToValue[turmaInfo.cozinha] || turmaInfo.cozinha) : '';
+    return calFiltroCozinha === 'todas' || cozValue === calFiltroCozinha;
+  }
+
+  function statusEstoque(ficha) {
+    const r = receitas[ficha.id];
     if (!r) return { classe: 'stock-out', txt: 'Sem ficha' };
     const e = estoquePorTurma[ficha.turma];
     if (!e) return { classe: 'stock-out', txt: 'Turma sem estoque' };
@@ -520,7 +564,11 @@ trocarReceita(select.value);
     return { classe: 'stock-low', txt: `${total - ok} item(s) em falta` };
   }
 
-  // Renderiza a grade do mês
+  // 🔒 BLOQUEIO HARD (RF02): ficha bloqueada se NÃO estiver com estoque OK
+  function fichaBloqueada(ficha) {
+    return statusEstoque(ficha).classe !== 'stock-ok';
+  }
+
   function render() {
     const ano = viewDate.getFullYear();
     const mes = viewDate.getMonth();
@@ -545,6 +593,7 @@ trocarReceita(select.value);
       if (fimDeSemana) cls += ' weekend';
       if (feriado) cls += ' holiday';
 
+      // Bolinhas só das fichas que passam pelo filtro de cozinha
       const aulas = (alocacoes[k] || []).filter(id => {
         const f = fichasDisponiveis.find(x => x.id === id);
         return fichaPassaFiltro(f);
@@ -561,8 +610,7 @@ trocarReceita(select.value);
     grid.innerHTML = html;
   }
 
-  // Renderiza painel lateral do dia
-  function renderPainel(k) {
+  function renderPainelCal(k) {
     document.getElementById('cal-panel-empty').style.display = 'none';
     document.getElementById('cal-panel-content').style.display = 'block';
 
@@ -571,8 +619,12 @@ trocarReceita(select.value);
     document.getElementById('cal-panel-date').textContent =
       data.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
 
-    // Alocadas
-    const aulas = alocacoes[k] || [];
+    // Fichas alocadas no dia, já filtradas
+    const aulas = (alocacoes[k] || []).filter(id => {
+      const f = fichasDisponiveis.find(x => x.id === id);
+      return fichaPassaFiltro(f);
+    });
+
     const elAloc = document.getElementById('cal-allocated');
     elAloc.innerHTML = aulas.length ? aulas.map(id => {
       const f = fichasDisponiveis.find(x => x.id === id);
@@ -592,12 +644,14 @@ trocarReceita(select.value);
     }).join('') : '<p class="cal-empty-text">Nenhuma ficha alocada para o filtro atual.</p>';
 
     const elDisp = document.getElementById('cal-available');
+    // Disponíveis = passam pelo filtro E não estão alocadas neste dia
     const alocadasDoDia = alocacoes[k] || [];
     const livres = fichasDisponiveis.filter(f =>
       fichaPassaFiltro(f) && !alocadasDoDia.includes(f.id)
     );
     elDisp.innerHTML = livres.length ? livres.map(f => {
       const st = statusEstoque(f);
+      // 🔒 BLOQUEIO HARD: sem estoque suficiente => não pode alocar
       const bloqueada = fichaBloqueada(f);
       return `
         <div class="cal-fiche ${bloqueada ? 'is-blocked' : ''}">
@@ -644,11 +698,19 @@ trocarReceita(select.value);
 
     if (addBtn) {
       const id = addBtn.dataset.add;
-      const st = statusEstoque(id);
-      // VALIDAÇÃO DE ESTOQUE antes de alocar
-      if (st.classe === 'stock-out') {
-        if (!confirm(`⚠️ "${id}" está sem estoque. Alocar mesmo assim?`)) return;
+      const f = fichasDisponiveis.find(x => x.id === id);
+
+      // 🔒 BLOQUEIO HARD: barra a alocação se não houver estoque suficiente
+      if (!f || fichaBloqueada(f)) {
+        alert(
+          `🚫 Alocação bloqueada\n\n` +
+          `"${f ? f.nome : id}" não possui insumos suficientes em estoque ` +
+          `na ${f && turmas[f.turma] ? turmas[f.turma].nome : 'turma'}.\n\n` +
+          `Reponha o estoque antes de agendar esta receita.`
+        );
+        return;
       }
+
       (alocacoes[diaSelecionado] = alocacoes[diaSelecionado] || []).push(id);
     }
     if (remBtn) {
@@ -669,16 +731,122 @@ trocarReceita(select.value);
     viewDate.setMonth(viewDate.getMonth() + 1); render();
   });
 
-  // Abrir / fechar modal
-  function abrir() { modal.classList.add('show'); render(); }
+  // ----- LISTENER DO FILTRO DE COZINHA -----
+  kitchenSel?.addEventListener('change', e => {
+    calFiltroCozinha = e.target.value;
+    render();
+    if (diaSelecionado) renderPainelCal(diaSelecionado);
+  });
+
+  function abrir() {
+    modal.classList.add('show');
+    render();
+  }
   function fechar() { modal.classList.remove('show'); }
 
   document.getElementById('cal-close').addEventListener('click', fechar);
   modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('show')) fechar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
 
   document.querySelectorAll('.link-btn').forEach(btn => {
     if (btn.textContent.includes('Calendário')) btn.addEventListener('click', abrir);
   });
 })();
 
+// ===== NOTIFICAÇÕES =====
+(function () {
+  const btn    = document.getElementById('notif-btn');
+  const panel  = document.getElementById('notif-panel');
+  const list   = document.getElementById('notif-list');
+  const badge  = document.getElementById('notif-badge');
+  const clear  = document.getElementById('notif-clear');
+  if (!btn || !panel) return;
+
+  // mapeia ficha -> turma (a partir de receitasPorTurma)
+  function fichaTurmaMap() {
+    const map = {};
+    Object.entries(receitasPorTurma).forEach(([turmaId, fichas]) => {
+      fichas.forEach(f => map[f] = turmaId);
+    });
+    return map;
+  }
+
+  function gerarNotificacoes() {
+    const notifs = [];
+    const lidas = JSON.parse(localStorage.getItem('sigec-notif-lidas') || '[]');
+    const fichaTurma = fichaTurmaMap();
+
+    Object.entries(receitas).forEach(([fichaId, receita]) => {
+      const turmaId = fichaTurma[fichaId];
+      const est = estoquePorTurma[turmaId];
+      if (!est) return;
+
+      receita.itens.forEach(item => {
+        const disp = est.insumos?.[item.id] ?? 0;
+        const id = `${turmaId}-${fichaId}-${item.id}`;
+
+        if (disp === 0) {
+          notifs.push({
+            id, tipo: 'err',
+            titulo: `Sem estoque: ${item.nome}`,
+            texto: `${turmas[turmaId].nome} • ${receita.nome} — falta tudo (${item.necessario}${item.unidade}).`
+          });
+        } else if (disp < item.necessario) {
+          notifs.push({
+            id, tipo: 'warn',
+            titulo: `Estoque baixo: ${item.nome}`,
+            texto: `${turmas[turmaId].nome} • falta ${item.necessario - disp}${item.unidade} de ${item.nome}.`
+          });
+        }
+      });
+    });
+
+    return notifs.map(n => ({ ...n, lida: lidas.includes(n.id) }));
+  }
+
+  function render() {
+    const notifs = gerarNotificacoes();
+    const naoLidas = notifs.filter(n => !n.lida).length;
+    badge.hidden = naoLidas === 0;
+
+    if (!notifs.length) {
+      list.innerHTML = `<p class="notif-empty">🎉 Tudo certo! Nenhuma pendência de estoque.</p>`;
+      return;
+    }
+
+    const icone = { err: 'error', warn: 'warning', info: 'check_circle' };
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.lida ? '' : 'unread'}">
+        <span class="notif-icon ${n.tipo}">
+          <span class="material-symbols-outlined">${icone[n.tipo]}</span>
+        </span>
+        <div class="notif-body">
+          <p class="notif-title">${n.titulo}</p>
+          <p class="notif-text">${n.texto}</p>
+        </div>
+      </div>`).join('');
+  }
+
+  function marcarTodasLidas() {
+    const ids = gerarNotificacoes().map(n => n.id);
+    localStorage.setItem('sigec-notif-lidas', JSON.stringify(ids));
+    render();
+  }
+
+  function toggle(open) {
+    const abrir = open ?? !panel.classList.contains('show');
+    panel.classList.toggle('show', abrir);
+    btn.setAttribute('aria-expanded', abrir);
+    if (abrir) render();
+  }
+
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+  clear.addEventListener('click', marcarTodasLidas);
+
+  document.addEventListener('click', e => {
+    if (!panel.contains(e.target) && !btn.contains(e.target)) toggle(false);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
+
+  render();
+})();
