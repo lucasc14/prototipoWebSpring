@@ -10,7 +10,6 @@
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <img src="Logo branca Senac.png" alt="SENAC — Fecomércio Sesc" class="brand-logo-img" /><br>
@@ -31,7 +30,6 @@
   </div>
 </aside>
 
-<!-- TOPBAR -->
 <header class="topbar">
   <div class="topbar-left">
     <button class="menu-toggle" id="menu-toggle"><span class="material-symbols-outlined">menu</span></button>
@@ -47,7 +45,6 @@
       <input type="text" placeholder="Buscar receita, turma...">
     </div>
 
-    <!-- ===== NOTIFICAÇÕES ===== -->
     <div class="notif-wrap">
       <button class="icon-btn" id="notif-btn" aria-label="Notificações" aria-expanded="false">
         <span class="material-symbols-outlined">notifications</span>
@@ -72,11 +69,9 @@
   </div>
 </header>
 
-<!-- MAIN -->
 <main class="main">
   <div class="content">
 
-    <!-- HERO -->
     <section class="hero flight-accent">
       <div class="hero-text">
         <p class="hero-date">Quarta-feira, 17 de Junho</p>
@@ -85,7 +80,6 @@
       </div>
     </section>
 
-    <!-- AÇÕES RÁPIDAS -->
     <section class="quick-actions">
       <button class="qa-card"><span class="material-symbols-outlined">menu_book</span><span>Ver Receitas</span></button>
       <button class="qa-card"><span class="material-symbols-outlined">library_add</span><span>Nova Receitas</span></button>
@@ -93,7 +87,6 @@
       <button class="qa-card"><span class="material-symbols-outlined">checklist</span><span>Lista de Utensílios</span></button>
     </section>
 
-    <!-- RECEITAS DO DIA -->
     <section class="classes-col">
       <div class="section-head split">
         <div class="section-head plain">
@@ -103,7 +96,6 @@
         <button class="link-btn"><span class="material-symbols-outlined sm">calendar_month</span>Calendário</button>
       </div>
 
-      <!-- Concluída -->
       <div class="class-card done" data-recipe="confeitaria_bolo" data-turma="2024.1.C">
         <div class="class-time"><p class="t-main">08:00</p><p class="t-end">12:00</p></div>
         <div class="divider"></div>
@@ -114,7 +106,6 @@
         <span class="status status-done"><span class="material-symbols-outlined sm">check_circle</span>Concluída</span>
       </div>
 
-      <!-- Em Curso -->
       <div class="class-card running flight-accent" data-recipe="panificacao_pao" data-turma="2024.1.A">
         <div class="class-time"><p class="t-main c-secondary">13:30</p><p class="t-end">17:30</p></div>
         <div class="divider sec"></div>
@@ -126,7 +117,6 @@
         <span class="status status-running"><span class="material-symbols-outlined sm">timer</span>Em Curso</span>
       </div>
 
-      <!-- Pendente -->
       <div class="class-card" data-recipe="asia_yakisoba" data-turma="2024.2.N">
         <div class="class-time"><p class="t-main">19:00</p><p class="t-end">22:30</p></div>
         <div class="divider"></div>
@@ -139,10 +129,8 @@
       </div>
     </section>
 
-    <!-- DOIS CHECKLISTS LADO A LADO -->
     <div class="checklists-grid">
 
-      <!-- CHECKLIST DE INSUMOS -->
       <section class="checklist-card">
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
@@ -150,7 +138,6 @@
             <h2 class="ch-title">Checklist de Insumos</h2>
           </div>
 
-          <!-- SELETOR DE TURMA (RF06) -->
           <label class="field-label" for="turma-select">Turma / Laboratório</label>
           <div class="select-wrap">
             <select id="turma-select"></select>
@@ -165,31 +152,53 @@
           <p class="ch-recipe">Receita: <strong id="recipe-name">—</strong></p>
           <p class="ch-loc" id="recipe-loc">—</p>
           <p class="ch-turma-badge" id="turma-badge">—</p>
-        </div>
 
-        <div class="progress-block">
-          <div class="progress-info">
-            <span class="bold" id="progress-text">0 de 0 itens</span>
-            <span class="muted"><span id="progress-pct">0</span>%</span>
+          <div class="ch-tabs">
+            <button class="ch-tab active" data-target="tab-recebimento">Recebimento do CD</button>
+            <button class="ch-tab" data-target="tab-execucao">Execução da Aula</button>
           </div>
-          <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
         </div>
 
-        <div id="checklist" class="checklist-items"></div>
-
-        <div class="add-row">
-          <button class="btn-add" id="btn-add-insumo">
-            <span class="material-symbols-outlined">add</span>Adicionar insumo
-          </button>
+        <div class="ch-tab-content active" id="tab-recebimento">
+          <div class="progress-block">
+            <div class="progress-info">
+              <span class="bold" id="rec-progress-text">0 de 0 itens</span>
+              <span class="muted"><span id="rec-progress-pct">0</span>%</span>
+            </div>
+            <div class="progress-track"><div id="rec-progress-bar" class="progress-fill"></div></div>
+          </div>
+          
+          <div id="checklist-rec" class="checklist-items"></div>
+          
+          <div class="add-row">
+            <button class="btn-add" id="btn-add-insumo">
+              <span class="material-symbols-outlined">add</span>Adicionar insumo extra
+            </button>
+          </div>
+          <div class="checklist-footer">
+            <button class="btn-ghost" onclick="alert('Avaria registrada no histórico do desktop!')">Registrar Avaria</button>
+            <button class="btn-confirm">Confirmar Chegada</button>
+          </div>
         </div>
 
-        <div class="checklist-footer">
-          <button id="btn-reset" class="btn-ghost">Limpar</button>
-          <button class="btn-confirm">Confirmar Separação</button>
+        <div class="ch-tab-content" id="tab-execucao">
+          <div class="progress-block">
+            <div class="progress-info">
+              <span class="bold" id="exe-progress-text">0 de 0 itens</span>
+              <span class="muted"><span id="exe-progress-pct">0</span>%</span>
+            </div>
+            <div class="progress-track"><div id="exe-progress-bar" class="progress-fill"></div></div>
+          </div>
+          
+          <div id="checklist-exe" class="checklist-items"></div>
+          
+          <div class="checklist-footer">
+            <button id="btn-reset" class="btn-ghost">Limpar</button>
+            <button class="btn-confirm">Confirmar Separação</button>
+          </div>
         </div>
       </section>
 
-      <!-- CHECKLIST DE UTENSÍLIOS -->
       <section class="checklist-card">
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
@@ -228,7 +237,6 @@
   </div>
 </main>
 
-<!-- ===== MODAL CALENDÁRIO ===== -->
 <div class="cal-modal" id="cal-modal">
   <div class="cal-box">
     <div class="cal-header flight-accent">
@@ -242,7 +250,6 @@
         <span class="cal-month" id="cal-month">Junho 2026</span>
         <button class="cal-nav-btn" id="cal-next"><span class="material-symbols-outlined">chevron_right</span></button>
 
-        <!-- FILTRO DE COZINHA (ÚNICO) -->
         <div class="cal-kitchen-filter">
           <select id="cal-kitchen">
             <option value="todas">Todas as cozinhas</option>
@@ -284,8 +291,46 @@
     </div>
   </div>
 </div>
+<!-- MODAL DE SOLICITAÇÃO ADICIONAL (RF05) -->
+<div class="modal-overlay" id="req-modal">
+  <div class="modal flight-accent">
+    <div class="modal-head">
+      <h3 class="modal-title">Solicitar Item Extra</h3>
+      <button class="modal-close" id="req-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    
+    <p class="modal-item" id="req-context-info">Destino: Cozinha Pedagógica</p>
 
-<!-- MODAL DE OBSERVAÇÃO -->
+    <label class="field-label dark" for="req-nome">Nome do Insumo / Utensílio *</label>
+    <input type="text" id="req-nome" class="req-input" placeholder="Ex.: Azeite Extra Virgem, Farinha...">
+
+    <div style="display:flex; gap:12px; margin-bottom: 14px;">
+      <div style="flex:1;">
+        <label class="field-label dark" for="req-qtd">Quantidade *</label>
+        <input type="number" id="req-qtd" class="req-input" placeholder="Ex.: 500" min="1" style="margin-bottom:0;">
+      </div>
+      <div style="flex:1;">
+        <label class="field-label dark" for="req-unidade">Unidade *</label>
+        <div class="select-wrap" style="margin-bottom:0;">
+          <select id="req-unidade" class="req-input" style="margin-bottom:0; padding-right:32px;">
+            <option value="g">Gramas (g)</option>
+            <option value="ml">Mililitros (ml)</option>
+            <option value="un">Unidades (un)</option>
+          </select>
+          <span class="material-symbols-outlined select-arrow">expand_more</span>
+        </div>
+      </div>
+    </div>
+
+    <label class="field-label dark" for="req-motivo">Motivo da Urgência *</label>
+    <textarea id="req-motivo" class="obs-textarea" placeholder="Ex.: A massa talhou, faltou na caixa de entrega do CD..."></textarea>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="req-cancel">Cancelar</button>
+      <button class="btn-confirm" id="req-send">Enviar para Gestão</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="obs-modal">
   <div class="modal flight-accent">
     <div class="modal-head">

@@ -143,6 +143,49 @@ body{
 .status-pending{background:var(--surface-high);color:var(--on-surface-variant)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 
+/* ===== ABAS (TABS) DE CHECKLIST ===== */
+.ch-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  border-radius: var(--r);
+}
+.ch-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--primary-fixed-dim);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: 0.2s;
+}
+.ch-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.ch-tab.active {
+  background: var(--surface-lowest);
+  color: var(--primary);
+}
+.ch-tab-content {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+}
+.ch-tab-content.active {
+  display: flex;
+  animation: fadeInTab 0.3s ease;
+}
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== CHECKLIST ===== */
 .checklist-card{background:var(--surface-lowest);border:1px solid var(--outline-variant);
   border-radius:var(--r-lg);overflow:hidden}
@@ -178,7 +221,7 @@ body{
 .check-item input:checked ~ .check-box{background:var(--secondary-container);border-color:var(--secondary-container)}
 .check-item input:checked ~ .check-box .material-symbols-outlined{opacity:1}
 
-.checklist-footer{padding:20px 24px;display:flex;gap:12px;border-top:1px solid var(--surface-variant)}
+.checklist-footer{padding:20px 24px;display:flex;gap:12px;border-top:1px solid var(--surface-variant);margin-top:auto}
 .btn-ghost{flex:1;background:transparent;border:1px solid var(--primary-container);color:var(--primary-container);
   padding:11px;font-weight:600;font-size:14px;border-radius:var(--r);cursor:pointer;transition:.2s}
 .btn-ghost:hover{background:var(--surface-low)}
@@ -470,4 +513,22 @@ body{
 }
 .cal-fiche-btn.locked:hover{
   background:transparent;
+}
+
+/* ===== INPUTS DO MODAL DE SOLICITAÇÃO ===== */
+.req-input {
+  width: 100%;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r);
+  padding: 11px 12px;
+  font-size: 14px;
+  color: var(--on-surface);
+  outline: none;
+  margin-bottom: 14px;
+  transition: 0.2s;
+  background: #fff;
+  font-family: 'Hanken Grotesk', sans-serif;
+}
+.req-input:focus {
+  border-bottom: 2px solid var(--secondary-container);
 }

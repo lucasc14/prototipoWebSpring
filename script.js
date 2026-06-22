@@ -189,30 +189,39 @@ function statusItem(tipo, item) {
 
 function obsKey(tipo, id) { return `${turmaAtual}|${receitaAtual}|${tipo}|${id}`; }
 
-// ===== Configuração dos dois painéis =====
+// ===== Configuração dos painéis com as NOVAS ABAS =====
 const painels = {
-  insumo: {
-    tipo: 'insumo',
+  rec: {
+    tipo: 'insumo', 
     getItens: () => receitas[receitaAtual].itens,
-    lista:  $('checklist'),
-    name:   $('recipe-name'),
-    loc:    $('recipe-loc'),
-    badge:  $('turma-badge'),
-    pText:  $('progress-text'),
-    pPct:   $('progress-pct'),
-    pBar:   $('progress-bar'),
-    rotulo: 'Lista de insumos'
+    lista: $('checklist-rec'), 
+    name: $('recipe-name'), 
+    loc: $('recipe-loc'), 
+    badge: $('turma-badge'),
+    pText: $('rec-progress-text'), 
+    pPct: $('rec-progress-pct'), 
+    pBar: $('rec-progress-bar'),
+    rotulo: 'Recebimento do CD'
+  },
+  exe: {
+    tipo: 'insumo', 
+    getItens: () => receitas[receitaAtual].itens,
+    lista: $('checklist-exe'), 
+    pText: $('exe-progress-text'), 
+    pPct: $('exe-progress-pct'), 
+    pBar: $('exe-progress-bar'),
+    rotulo: 'Execução da Aula'
   },
   util: {
-    tipo: 'util',
+    tipo: 'util', 
     getItens: () => utensiliosFicha[receitaAtual] || [],
-    lista:  $('util-checklist'),
-    name:   $('util-recipe-name'),
-    loc:    $('util-recipe-loc'),
-    badge:  $('util-turma-badge'),
-    pText:  $('util-progress-text'),
-    pPct:   $('util-progress-pct'),
-    pBar:   $('util-progress-bar'),
+    lista: $('util-checklist'), 
+    name: $('util-recipe-name'), 
+    loc: $('util-recipe-loc'), 
+    badge: $('util-turma-badge'),
+    pText: $('util-progress-text'), 
+    pPct: $('util-progress-pct'), 
+    pBar: $('util-progress-bar'),
     rotulo: 'Lista de utensílios'
   }
 };
@@ -240,24 +249,19 @@ function updateProgress(p) {
   const total = itens.length;
   const done  = itens.filter(i => statusItem(p.tipo, i).ok).length;
   const pct   = total ? Math.round((done / total) * 100) : 0;
-  p.pText.textContent = `${done} de ${total} itens em estoque`;
-  p.pPct.textContent  = pct;
-  p.pBar.style.width  = pct + '%';
+  if(p.pText) p.pText.textContent = `${done} de ${total} itens em estoque`;
+  if(p.pPct)  p.pPct.textContent  = pct;
+  if(p.pBar)  p.pBar.style.width  = pct + '%';
 }
 
 function renderPainel(p) {
   const receita = receitas[receitaAtual];
   const turma = turmas[turmaAtual];
 
-  if (!receita || !turma) {
-    console.warn('renderPainel abortado — estado inconsistente:', {
-      receitaAtual, turmaAtual
-    });
-    return;
-  }
+  if (!receita || !turma) return;
 
-  p.name.textContent = receita.nome;
-  p.loc.textContent  = receita.local;
+  if (p.name) p.name.textContent = receita.nome;
+  if (p.loc) p.loc.textContent  = receita.local;
   if (p.badge) p.badge.textContent = `${turma.nome} • ${turma.cozinha}`;
 
   const itens = p.getItens();
@@ -282,7 +286,8 @@ function renderPainel(p) {
 }
 
 function renderTudo() {
-  renderPainel(painels.insumo);
+  renderPainel(painels.rec);
+  renderPainel(painels.exe);
   renderPainel(painels.util);
 }
 
@@ -296,35 +301,31 @@ function configurarPainel(p, btnAddId, btnResetId) {
     }
   });
 
-  $(btnResetId).addEventListener('click', () => {
-    const e = estoquePorTurma[turmaAtual];
-    const bucket = p.tipo === 'util' ? e.utensilios : e.insumos;
-    p.getItens().forEach(i => bucket[i.id] = 0);
-    renderPainel(p);
-  });
+  if(btnResetId && $(btnResetId)) {
+    $(btnResetId).addEventListener('click', () => {
+      const e = estoquePorTurma[turmaAtual];
+      const bucket = p.tipo === 'util' ? e.utensilios : e.insumos;
+      p.getItens().forEach(i => bucket[i.id] = 0);
+      renderPainel(p);
+      if(p === painels.rec || p === painels.exe) {
+        renderPainel(painels.rec);
+        renderPainel(painels.exe);
+      }
+    });
+  }
 
-  $(btnAddId).addEventListener('click', () => {
-    const label = p.tipo === 'util' ? 'utensílio' : 'insumo';
-    const nome = prompt(`Nome do ${label}:`);
-    if (!nome || !nome.trim()) return;
-    const necessario = parseFloat(prompt('Quantidade necessária (número):')) || 0;
-    const unidade = (prompt('Unidade (g, ml, un):') || 'un').trim();
-    const disp = parseFloat(prompt(`Quanto há em estoque na ${turmas[turmaAtual].nome}?`)) || 0;
-    const id = 'item_' + Date.now();
-
-    if (p.tipo === 'util') {
-      (utensiliosFicha[receitaAtual] = utensiliosFicha[receitaAtual] || []);
-    }
-    p.getItens().push({ id, nome: nome.trim(), necessario, unidade });
-
-    const e = estoquePorTurma[turmaAtual];
-    (p.tipo === 'util' ? e.utensilios : e.insumos)[id] = disp;
-    renderPainel(p);
-  });
+  // NOVA LÓGICA: Abre o modal em vez do prompt()
+  if(btnAddId && $(btnAddId)) {
+    $(btnAddId).addEventListener('click', () => {
+      abrirModalRequisicao(p.tipo);
+    });
+  }
 }
 
-configurarPainel(painels.insumo, 'btn-add-insumo', 'btn-reset');
-configurarPainel(painels.util,   'btn-add-util',   'util-btn-reset');
+configurarPainel(painels.rec, 'btn-add-insumo', null); 
+configurarPainel(painels.exe, null, 'btn-reset'); 
+configurarPainel(painels.util, 'btn-add-util', 'util-btn-reset');
+
 
 // ===== Troca de receita / turma =====
 function trocarReceita(key) {
@@ -336,7 +337,6 @@ function trocarReceita(key) {
   highlightCard(key);
 }
 
-// Popula o <select> de receitas conforme a turma ativa
 function popularReceitasDaTurma(turmaKey) {
   const permitidas = receitasPorTurma[turmaKey] || Object.keys(receitas);
   select.innerHTML = permitidas
@@ -363,7 +363,6 @@ function trocarTurma(key) {
 select.addEventListener('change', e => trocarReceita(e.target.value));
 turmaSelect.addEventListener('change', e => trocarTurma(e.target.value));
 
-// Popular o <select> de turmas
 turmaSelect.innerHTML = Object.entries(turmas)
   .map(([k, t]) => `<option value="${k}">${t.nome} — ${t.cozinha}</option>`).join('');
 
@@ -376,7 +375,7 @@ document.querySelectorAll('.class-card').forEach(card => {
     link.addEventListener('click', () => {
       if (turmaKey && turmas[turmaKey]) trocarTurma(turmaKey);
       trocarReceita(recipeKey);
-      painels.insumo.lista.closest('.checklist-card')
+      painels.rec.lista.closest('.checklist-card')
         .scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
@@ -417,7 +416,8 @@ let obsTipoAtual = null;
 function abrirObs(tipo, id) {
   obsTipoAtual = tipo;
   obsIdAtual   = id;
-  const item = painels[tipo].getItens().find(i => i.id === id);
+  const panel = painels[tipo] || painels.rec; 
+  const item = panel.getItens().find(i => i.id === id);
   obsName.textContent = item ? item.nome : '';
   obsText.value = observacoes[obsKey(tipo, id)] || '';
   obsModal.classList.add('show');
@@ -433,7 +433,12 @@ function fecharObs() {
 $('obs-save').addEventListener('click', () => {
   if (obsIdAtual && obsTipoAtual) {
     observacoes[obsKey(obsTipoAtual, obsIdAtual)] = obsText.value.trim();
-    renderPainel(painels[obsTipoAtual]);
+    if(obsTipoAtual === 'insumo') {
+      renderPainel(painels.rec);
+      renderPainel(painels.exe);
+    } else {
+      renderPainel(painels[obsTipoAtual]);
+    }
   }
   fecharObs();
 });
@@ -441,17 +446,73 @@ $('obs-save').addEventListener('click', () => {
 $('obs-close').addEventListener('click', fecharObs);
 $('obs-cancel').addEventListener('click', fecharObs);
 obsModal.addEventListener('click', e => { if (e.target === obsModal) fecharObs(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharObs(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && obsModal.classList.contains('show')) fecharObs(); });
 
-// ===== Inicialização =====
-turmaAtual   = '2024.1.A';
-turmaSelect.value = turmaAtual;
-popularReceitasDaTurma(turmaAtual);
-receitaAtual = (receitasPorTurma[turmaAtual] || Object.keys(receitas))[0];
-select.value = receitaAtual;
+// ===== LÓGICA DE ABAS (TABS) DO CHECKLIST =====
+document.querySelectorAll('.ch-tab').forEach(tab => {
+  tab.addEventListener('click', (e) => {
+    const targetId = e.target.dataset.target;
+    document.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ch-tab-content').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById(targetId).classList.add('active');
+  });
+});
 
-renderTudo();
-highlightCard(receitaAtual);
+
+// ===== LÓGICA DO MODAL DE SOLICITAÇÃO ADICIONAL (RF05) =====
+const reqModal = $('req-modal');
+const reqNome = $('req-nome');
+const reqQtd = $('req-qtd');
+const reqUnidade = $('req-unidade');
+const reqMotivo = $('req-motivo');
+const reqContextInfo = $('req-context-info');
+let reqTipoAtual = null;
+
+function abrirModalRequisicao(tipo) {
+  reqTipoAtual = tipo;
+  const turma = turmas[turmaAtual];
+  const receita = receitas[receitaAtual];
+  
+  // Atualiza o contexto visual para o instrutor saber para onde está pedindo
+  reqContextInfo.textContent = `Destino: ${turma.nome} (${turma.cozinha}) - ${receita.nome}`;
+  
+  // Limpa os campos
+  reqNome.value = '';
+  reqQtd.value = '';
+  reqMotivo.value = '';
+  reqUnidade.value = tipo === 'util' ? 'un' : 'g';
+  
+  reqModal.classList.add('show');
+  reqNome.focus();
+}
+
+function fecharModalRequisicao() {
+  reqModal.classList.remove('show');
+  reqTipoAtual = null;
+}
+
+$('req-send').addEventListener('click', () => {
+  const nome = reqNome.value.trim();
+  const qtd = reqQtd.value.trim();
+  const motivo = reqMotivo.value.trim();
+
+  if (!nome || !qtd || !motivo) {
+    alert('Por favor, preencha todos os campos obrigatórios (Nome, Quantidade e Motivo).');
+    return;
+  }
+
+  // Simulação da regra de negócio: O item NÃO vai para a lista ainda.
+  alert(`✅ Solicitação enviada com sucesso!\n\nSeu pedido de ${qtd}${reqUnidade.value} de "${nome}" foi encaminhado para a Equipe de Gestão aprovar.\n\nAguarde a entrega no laboratório.`);
+  
+  fecharModalRequisicao();
+});
+
+$('req-close').addEventListener('click', fecharModalRequisicao);
+$('req-cancel').addEventListener('click', fecharModalRequisicao);
+reqModal.addEventListener('click', e => { if (e.target === reqModal) fecharModalRequisicao(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.classList.contains('show')) fecharModalRequisicao(); });
+
 
 // ===== CALENDÁRIO INTERATIVO (FILTRO ÚNICO: COZINHA) =====
 (function () {
@@ -464,14 +525,12 @@ highlightCard(receitaAtual);
     '12-25': 'Natal', '06-19': 'Recesso', '07-09': 'Recesso'
   };
 
-  // Mapa: cozinha (texto da turma) -> value do <select id="cal-kitchen">
   const cozinhaToValue = {
     "Padaria Lab 01":        "lab01",
     "Cozinha Pedagógica 02": "lab02",
     "Cozinha Pedagógica 04": "lab04"
   };
 
-  // Agora com 2 fichas por turma
   const fichasDisponiveis = [
     { id: 'confeitaria_bolo',     nome: 'Confeitaria: Bolo de Cenoura', turma: '2024.1.C' },
     { id: 'confeitaria_torta',    nome: 'Confeitaria: Torta de Maçã',   turma: '2024.1.C' },
@@ -486,8 +545,6 @@ highlightCard(receitaAtual);
 
   let viewDate = new Date(2026, 5, 1);
   let diaSelecionado = null;
-
-  // Estado do filtro do calendário (APENAS COZINHA)
   let calFiltroCozinha = 'todas';
 
   const modal      = document.getElementById('cal-modal');
@@ -499,9 +556,6 @@ highlightCard(receitaAtual);
   const chave = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const mmdd  = d => `${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-  // ----- FILTRO POR COZINHA -----
-
-  // Retorna true se a ficha passa pelo filtro de cozinha
   function fichaPassaFiltro(f) {
     if (!f) return false;
     const turmaInfo = turmas[f.turma];
@@ -526,7 +580,6 @@ highlightCard(receitaAtual);
     return { classe: 'stock-low', txt: `${total - ok} item(s) em falta` };
   }
 
-  // 🔒 BLOQUEIO HARD (RF02): ficha bloqueada se NÃO estiver com estoque OK
   function fichaBloqueada(ficha) {
     return statusEstoque(ficha).classe !== 'stock-ok';
   }
@@ -555,7 +608,6 @@ highlightCard(receitaAtual);
       if (fimDeSemana) cls += ' weekend';
       if (feriado) cls += ' holiday';
 
-      // Bolinhas só das fichas que passam pelo filtro de cozinha
       const aulas = (alocacoes[k] || []).filter(id => {
         const f = fichasDisponiveis.find(x => x.id === id);
         return fichaPassaFiltro(f);
@@ -581,7 +633,6 @@ highlightCard(receitaAtual);
     document.getElementById('cal-panel-date').textContent =
       data.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
 
-    // Fichas alocadas no dia, já filtradas
     const aulas = (alocacoes[k] || []).filter(id => {
       const f = fichasDisponiveis.find(x => x.id === id);
       return fichaPassaFiltro(f);
@@ -606,14 +657,12 @@ highlightCard(receitaAtual);
     }).join('') : '<p class="cal-empty-text">Nenhuma ficha alocada para o filtro atual.</p>';
 
     const elDisp = document.getElementById('cal-available');
-    // Disponíveis = passam pelo filtro E não estão alocadas neste dia
     const alocadasDoDia = alocacoes[k] || [];
     const livres = fichasDisponiveis.filter(f =>
       fichaPassaFiltro(f) && !alocadasDoDia.includes(f.id)
     );
     elDisp.innerHTML = livres.length ? livres.map(f => {
       const st = statusEstoque(f);
-      // 🔒 BLOQUEIO HARD: sem estoque suficiente => não pode alocar
       const bloqueada = fichaBloqueada(f);
       return `
         <div class="cal-fiche ${bloqueada ? 'is-blocked' : ''}">
@@ -662,7 +711,6 @@ highlightCard(receitaAtual);
       const id = addBtn.dataset.add;
       const f = fichasDisponiveis.find(x => x.id === id);
 
-      // 🔒 BLOQUEIO HARD: barra a alocação se não houver estoque suficiente
       if (!f || fichaBloqueada(f)) {
         alert(
           `🚫 Alocação bloqueada\n\n` +
@@ -672,7 +720,6 @@ highlightCard(receitaAtual);
         );
         return;
       }
-
       (alocacoes[diaSelecionado] = alocacoes[diaSelecionado] || []).push(id);
     }
     if (remBtn) {
@@ -693,7 +740,6 @@ highlightCard(receitaAtual);
     viewDate.setMonth(viewDate.getMonth() + 1); render();
   });
 
-  // ----- LISTENER DO FILTRO DE COZINHA -----
   kitchenSel?.addEventListener('change', e => {
     calFiltroCozinha = e.target.value;
     render();
@@ -708,7 +754,7 @@ highlightCard(receitaAtual);
 
   document.getElementById('cal-close').addEventListener('click', fechar);
   modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('show')) fechar(); });
 
   document.querySelectorAll('.link-btn').forEach(btn => {
     if (btn.textContent.includes('Calendário')) btn.addEventListener('click', abrir);
@@ -724,7 +770,6 @@ highlightCard(receitaAtual);
   const clear  = document.getElementById('notif-clear');
   if (!btn || !panel) return;
 
-  // mapeia ficha -> turma (a partir de receitasPorTurma)
   function fichaTurmaMap() {
     const map = {};
     Object.entries(receitasPorTurma).forEach(([turmaId, fichas]) => {
@@ -808,7 +853,17 @@ highlightCard(receitaAtual);
   document.addEventListener('click', e => {
     if (!panel.contains(e.target) && !btn.contains(e.target)) toggle(false);
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('show')) toggle(false); });
 
   render();
 })();
+
+// ===== INICIALIZAÇÃO GERAL =====
+turmaAtual   = '2024.1.A';
+turmaSelect.value = turmaAtual;
+popularReceitasDaTurma(turmaAtual);
+receitaAtual = (receitasPorTurma[turmaAtual] || Object.keys(receitas))[0];
+select.value = receitaAtual;
+
+renderTudo();
+highlightCard(receitaAtual);
