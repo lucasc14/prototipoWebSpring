@@ -170,6 +170,19 @@ const observacoes = {}; // chave: `${turma}|${ficha}|${tipo}|${id}`
 let receitaAtual;
 let turmaAtual;
 
+// ===== Modo de checklist (RF04): 'recebimento' | 'execucao' =====
+let modoChecklist = 'recebimento';
+
+// ===== Solicitações adicionais (por receita + tipo) =====
+let solicitacoes = JSON.parse(localStorage.getItem('sigec-solicitacoes') || '{}');
+const salvarSolicitacoes = () =>
+  localStorage.setItem('sigec-solicitacoes', JSON.stringify(solicitacoes));
+
+function getSolic(key, tipo) {
+  solicitacoes[key] = solicitacoes[key] || { insumo: [], util: [] };
+  return solicitacoes[key][tipo];
+}
+
 // ===== Helpers de DOM =====
 const $ = id => document.getElementById(id);
 
@@ -229,6 +242,13 @@ const painels = {
 const select = $('recipe-select');
 const turmaSelect = $('turma-select');
 
+// Status visuais das solicitações
+const REQ_STATUS = {
+  pending:  { cls: 'pending',  icon: 'hourglass_top', txt: 'Aguardando aprovação' },
+  approved: { cls: 'approved', icon: 'check_circle',  txt: 'Aprovada' },
+  rejected: { cls: 'rejected', icon: 'cancel',        txt: 'Recusada' }
+};
+
 // ===== Funções genéricas =====
 function aplicarScrollAdaptativo(container, qtd, rotulo) {
   const ativar = qtd > LIMITE_SCROLL;
@@ -247,11 +267,13 @@ function aplicarScrollAdaptativo(container, qtd, rotulo) {
 function updateProgress(p) {
   const itens = p.getItens();
   const total = itens.length;
-  const done  = itens.filter(i => statusItem(p.tipo, i).ok).length;
+  const campo = modoChecklist === 'recebimento' ? 'recebido' : 'ok';
+  const done  = itens.filter(i => i[campo]).length;
   const pct   = total ? Math.round((done / total) * 100) : 0;
-  if(p.pText) p.pText.textContent = `${done} de ${total} itens em estoque`;
-  if(p.pPct)  p.pPct.textContent  = pct;
-  if(p.pBar)  p.pBar.style.width  = pct + '%';
+  p.pText.textContent = `${done} de ${total} itens`;
+  p.pPct.textContent  = pct;
+  p.pBar.style.width  = pct + '%';
+  if (window.atualizarNotificacoes) window.atualizarNotificacoes();
 }
 
 function renderPainel(p) {
@@ -265,24 +287,56 @@ function renderPainel(p) {
   if (p.badge) p.badge.textContent = `${turma.nome} • ${turma.cozinha}`;
 
   const itens = p.getItens();
-  p.lista.innerHTML = itens.map((it) => {
-    const disp = estoqueDisponivel(p.tipo, it.id);
-    const s = statusItem(p.tipo, it);
-    const obs = observacoes[obsKey(p.tipo, it.id)];
-    const clsEstoque = s.st === 'ok' ? '' : (s.st === 'falta' ? 'estoque-falta' : 'estoque-baixo');
+  const recv  = modoChecklist === 'recebimento';
+
+  let html = itens.map((it, i) => {
+    if (recv) {
+      // MODO RECEBIMENTO DO CD: conferir caixa + registrar avaria
+      return `
+        <label class="check-item ${it.avaria ? 'has-avaria' : ''} ${it.obs ? 'has-obs' : ''}">
+          <input type="checkbox" data-i="${i}" ${it.recebido ? 'checked' : ''}>
+          <span class="check-box recv-box"><span class="material-symbols-outlined">check</span></span>
+          <span class="check-label" data-obs="${i}">${it.nome}</span>
+          <span class="avaria-flag" title="${it.avaria || ''}"><span class="material-symbols-outlined">report</span></span>
+          <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+          <span class="check-qty">${it.qtd}</span>
+          <button class="btn-avaria" data-avaria="${i}" title="Registrar avaria">
+            <span class="material-symbols-outlined">report</span>Avaria
+          </button>
+        </label>`;
+    }
+    // MODO EXECUÇÃO DA AULA: check simples (vai para a panela)
     return `
-      <label class="check-item ${obs ? 'has-obs' : ''} ${clsEstoque}">
-        <input type="checkbox" data-id="${it.id}" ${s.ok ? 'checked' : ''} disabled>
+      <label class="check-item ${it.obs ? 'has-obs' : ''}">
+        <input type="checkbox" data-i="${i}" ${it.ok ? 'checked' : ''}>
         <span class="check-box"><span class="material-symbols-outlined">check</span></span>
-        <span class="check-label" data-obs="${it.id}">${it.nome}</span>
-        <span class="obs-flag" title="${obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
-        <span class="estoque-tag ${s.st}">${s.label}</span>
-        <span class="check-qty">${disp}/${it.necessario}${it.unidade}</span>
+        <span class="check-label" data-obs="${i}">${it.nome}</span>
+        <span class="obs-flag" title="${it.obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+        <span class="check-qty">${it.qtd}</span>
       </label>`;
   }).join('');
 
+  // Solicitações adicionais (mantidas em ambos os modos)
+  const tipo = (p === painels.util) ? 'util' : 'insumo';
+  const solics = getSolic(receitaAtual, tipo);
+
+  html += solics.map((s, i) => {
+    const st = REQ_STATUS[s.status] || REQ_STATUS.pending;
+    return `
+      <div class="check-item is-request" title="${s.justificativa || ''}">
+        <span class="material-symbols-outlined req-ico">assignment_add</span>
+        <span class="check-label">${s.nome}${s.urgencia === 'Urgente' ? '<span class="req-urg">• Urgente</span>' : ''}</span>
+        <span class="req-badge ${st.cls}"><span class="material-symbols-outlined">${st.icon}</span>${st.txt}</span>
+        <span class="check-qty">${s.qtd}</span>
+        <button class="req-del" data-del-solic="${i}" title="Remover solicitação">
+          <span class="material-symbols-outlined sm">delete</span>
+        </button>
+      </div>`;
+  }).join('');
+
+  p.lista.innerHTML = html;
   updateProgress(p);
-  aplicarScrollAdaptativo(p.lista, itens.length, p.rotulo);
+  aplicarScrollAdaptativo(p.lista, itens.length + solics.length, p.rotulo);
 }
 
 function renderTudo() {
@@ -291,35 +345,62 @@ function renderTudo() {
   renderPainel(painels.util);
 }
 
-// ===== Listeners por painel =====
-function configurarPainel(p, btnAddId, btnResetId) {
+// ===== Listeners por painel (marcar, limpar, observação, solicitação) =====
+function configurarPainel(tipo, p, btnAddId, btnResetId) {
+  // Marcar / desmarcar (grava no campo certo conforme o modo)
+  p.lista.addEventListener('change', e => {
+    if (e.target.matches('input[type=checkbox]')) {
+      const campo = modoChecklist === 'recebimento' ? 'recebido' : 'ok';
+      p.getItens()[e.target.dataset.i][campo] = e.target.checked;
+      updateProgress(p);
+    }
+  });
+
+  // Clique na lista: avaria > remover solicitação > observação
   p.lista.addEventListener('click', e => {
+    // Registrar avaria (modo recebimento)
+    const avBtn = e.target.closest('[data-avaria]');
+    if (avBtn) {
+      e.preventDefault();
+      abrirAvaria(tipo, Number(avBtn.dataset.avaria));
+      return;
+    }
+    // Remover solicitação adicional
+    const delBtn = e.target.closest('[data-del-solic]');
+    if (delBtn) {
+      e.preventDefault();
+      if (confirm('Remover esta solicitação?')) {
+        getSolic(receitaAtual, tipo).splice(Number(delBtn.dataset.delSolic), 1);
+        salvarSolicitacoes();
+        renderPainel(p);
+      }
+      return;
+    }
+    // Observação
     const label = e.target.closest('.check-label');
-    if (label) {
+    if (label && label.dataset.obs !== undefined) {
       e.preventDefault();
       abrirObs(p.tipo, label.dataset.obs);
     }
   });
 
-  if(btnResetId && $(btnResetId)) {
-    $(btnResetId).addEventListener('click', () => {
-      const e = estoquePorTurma[turmaAtual];
-      const bucket = p.tipo === 'util' ? e.utensilios : e.insumos;
-      p.getItens().forEach(i => bucket[i.id] = 0);
-      renderPainel(p);
-      if(p === painels.rec || p === painels.exe) {
-        renderPainel(painels.rec);
-        renderPainel(painels.exe);
-      }
-    });
-  }
+  // Limpar (limpa o campo do modo atual)
+  $(btnResetId).addEventListener('click', () => {
+    const campo = modoChecklist === 'recebimento' ? 'recebido' : 'ok';
+    p.getItens().forEach(i => i[campo] = false);
+    renderPainel(p);
+  });
 
-  // NOVA LÓGICA: Abre o modal em vez do prompt()
-  if(btnAddId && $(btnAddId)) {
-    $(btnAddId).addEventListener('click', () => {
-      abrirModalRequisicao(p.tipo);
-    });
-  }
+  // Adicionar
+  $(btnAddId).addEventListener('click', () => {
+    const label = tipo === 'util' ? 'utensílio' : 'insumo';
+    const nome = prompt(`Nome do ${label}:`);
+    if (!nome || !nome.trim()) return;
+    const qtd = prompt('Quantidade (ex.: 500 g, 2 un, 1 L):') || '';
+    if (tipo === 'util' && !utensilios[receitaAtual]) utensilios[receitaAtual] = [];
+    p.getItens().push({ nome: nome.trim(), qtd: qtd.trim(), ok: false, recebido: false });
+    renderPainel(p);
+  });
 }
 
 configurarPainel(painels.rec, 'btn-add-insumo', null); 
@@ -497,24 +578,147 @@ $('req-send').addEventListener('click', () => {
   const qtd = reqQtd.value.trim();
   const motivo = reqMotivo.value.trim();
 
-  if (!nome || !qtd || !motivo) {
-    alert('Por favor, preencha todos os campos obrigatórios (Nome, Quantidade e Motivo).');
-    return;
+// ============================================
+// ===== MODAL DE SOLICITAÇÃO ADICIONAL =====
+// ============================================
+(function () {
+  const modal  = $('req-modal');
+  const ctxEl  = $('req-context');
+  const inNome = $('req-nome');
+  const inQtd  = $('req-qtd');
+  const inUrg  = $('req-urgencia');
+  const inJust = $('req-just');
+  if (!modal) return;
+
+  let tipoAtual = 'insumo';
+
+  function abrir(tipo) {
+    tipoAtual = tipo;
+    const label = tipo === 'util' ? 'Utensílio' : 'Insumo';
+    ctxEl.textContent = `${label} • ${receitas[receitaAtual]?.nome || '—'}`;
+    inNome.value = ''; inQtd.value = ''; inJust.value = ''; inUrg.value = 'Normal';
+    modal.classList.add('show');
+    inNome.focus();
+  }
+  function fechar() { modal.classList.remove('show'); }
+
+  document.querySelectorAll('.btn-solicitar').forEach(btn => {
+    btn.addEventListener('click', () => abrir(btn.dataset.tipo));
+  });
+
+  $('req-save').addEventListener('click', () => {
+    const nome = inNome.value.trim();
+    const qtd  = inQtd.value.trim();
+    if (!nome || !qtd) { alert('Preencha o nome do item e a quantidade.'); return; }
+
+    getSolic(receitaAtual, tipoAtual).push({
+      nome, qtd,
+      urgencia: inUrg.value,
+      justificativa: inJust.value.trim(),
+      status: 'pending',  // sempre nasce aguardando aprovação no desktop
+      data: new Date().toLocaleString('pt-BR')
+    });
+    salvarSolicitacoes();
+
+    renderPainel(tipoAtual === 'util' ? painels.util : painels.insumo);
+    fechar();
+
+    if (window.adicionarNotificacaoManual) {
+      window.adicionarNotificacaoManual(
+        `Solicitação enviada: ${nome} (${qtd}) — aguardando aprovação`,
+        'assignment_add'
+      );
+    }
+  });
+
+  $('req-close').addEventListener('click', fechar);
+  $('req-cancel').addEventListener('click', fechar);
+  modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fechar(); });
+})();
+
+// ============================================
+// ===== ABAS DE CHECKLIST (RF04) =====
+// ============================================
+(function () {
+  const tabs = document.querySelectorAll('.ch-tab');
+  const badges = [$('mode-badge-insumo'), $('mode-badge-util')];
+
+  const TEXTO_MODO = {
+    recebimento: { badge: 'Recebimento', confirm: 'Confirmar Recebimento' },
+    execucao:    { badge: 'Execução',    confirm: 'Confirmar Separação' }
+  };
+
+  function aplicarModo(modo) {
+    modoChecklist = modo;
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.modo === modo));
+    badges.forEach(b => { if (b) b.textContent = TEXTO_MODO[modo].badge; });
+
+    // Atualiza rótulo do botão de confirmar dos insumos
+    const btnConf = $('btn-confirm-insumo');
+    if (btnConf) btnConf.textContent = TEXTO_MODO[modo].confirm;
+
+    renderTudo();
   }
 
-  // Simulação da regra de negócio: O item NÃO vai para a lista ainda.
-  alert(`✅ Solicitação enviada com sucesso!\n\nSeu pedido de ${qtd}${reqUnidade.value} de "${nome}" foi encaminhado para a Equipe de Gestão aprovar.\n\nAguarde a entrega no laboratório.`);
-  
-  fecharModalRequisicao();
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => aplicarModo(tab.dataset.modo));
+  });
+})();
+
+// ============================================
+// ===== MODAL DE AVARIA (RF04) =====
+// ============================================
+const avariaModal = $('avaria-modal');
+let avariaTipoAtual = null, avariaIndexAtual = null;
+
+function abrirAvaria(tipo, i) {
+  avariaTipoAtual = tipo;
+  avariaIndexAtual = i;
+  const item = painels[tipo].getItens()[i];
+  $('avaria-item-name').textContent = item.nome;
+  $('avaria-tipo').value = item.avariaTipo || '';
+  $('avaria-text').value = item.avaria || '';
+  avariaModal.classList.add('show');
+}
+
+function fecharAvaria() {
+  avariaModal.classList.remove('show');
+  avariaTipoAtual = null;
+  avariaIndexAtual = null;
+}
+
+$('avaria-save').addEventListener('click', () => {
+  if (avariaTipoAtual && avariaIndexAtual !== null) {
+    const p = painels[avariaTipoAtual];
+    const item = p.getItens()[avariaIndexAtual];
+    const tipoAv = $('avaria-tipo').value;
+    const desc   = $('avaria-text').value.trim();
+
+    if (!tipoAv && !desc) {
+      // limpar avaria
+      delete item.avaria; delete item.avariaTipo;
+    } else {
+      item.avariaTipo = tipoAv;
+      item.avaria = (tipoAv ? tipoAv + (desc ? ' — ' : '') : '') + desc;
+      if (window.adicionarNotificacaoManual) {
+        window.adicionarNotificacaoManual(
+          `Avaria registrada: ${item.nome} (${tipoAv || 'sem tipo'})`,
+          'report'
+        );
+      }
+    }
+    renderPainel(p);
+  }
+  fecharAvaria();
 });
 
-$('req-close').addEventListener('click', fecharModalRequisicao);
-$('req-cancel').addEventListener('click', fecharModalRequisicao);
-reqModal.addEventListener('click', e => { if (e.target === reqModal) fecharModalRequisicao(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.classList.contains('show')) fecharModalRequisicao(); });
+$('avaria-close').addEventListener('click', fecharAvaria);
+$('avaria-cancel').addEventListener('click', fecharAvaria);
+avariaModal.addEventListener('click', e => { if (e.target === avariaModal) fecharAvaria(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharAvaria(); });
 
-
-// ===== CALENDÁRIO INTERATIVO (FILTRO ÚNICO: COZINHA) =====
+// ===== CALENDÁRIO INTERATIVO =====
 (function () {
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -523,12 +727,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
     '01-01': 'Ano Novo', '04-21': 'Tiradentes', '05-01': 'Trabalho',
     '09-07': 'Independência', '10-12': 'N. Sra.', '11-15': 'República',
     '12-25': 'Natal', '06-19': 'Recesso', '07-09': 'Recesso'
-  };
-
-  const cozinhaToValue = {
-    "Padaria Lab 01":        "lab01",
-    "Cozinha Pedagógica 02": "lab02",
-    "Cozinha Pedagógica 04": "lab04"
   };
 
   const fichasDisponiveis = [
@@ -547,24 +745,16 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
   let diaSelecionado = null;
   let calFiltroCozinha = 'todas';
 
-  const modal      = document.getElementById('cal-modal');
-  const grid       = document.getElementById('cal-grid');
-  const monthEl    = document.getElementById('cal-month');
-  const kitchenSel = document.getElementById('cal-kitchen');
+  const modal   = document.getElementById('cal-modal');
+  const grid    = document.getElementById('cal-grid');
+  const monthEl = document.getElementById('cal-month');
 
   const pad = n => String(n).padStart(2, '0');
   const chave = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const mmdd  = d => `${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 
-  function fichaPassaFiltro(f) {
-    if (!f) return false;
-    const turmaInfo = turmas[f.turma];
-    const cozValue = turmaInfo ? (cozinhaToValue[turmaInfo.cozinha] || turmaInfo.cozinha) : '';
-    return calFiltroCozinha === 'todas' || cozValue === calFiltroCozinha;
-  }
-
-  function statusEstoque(ficha) {
-    const r = receitas[ficha.id];
+  function statusEstoque(id) {
+    const r = receitas[id];
     if (!r) return { classe: 'stock-out', txt: 'Sem ficha' };
     const e = estoquePorTurma[ficha.turma];
     if (!e) return { classe: 'stock-out', txt: 'Turma sem estoque' };
@@ -578,10 +768,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
     if (ok === total) return { classe: 'stock-ok',  txt: 'Estoque OK' };
     if (algum === 0)  return { classe: 'stock-out', txt: 'Sem estoque' };
     return { classe: 'stock-low', txt: `${total - ok} item(s) em falta` };
-  }
-
-  function fichaBloqueada(ficha) {
-    return statusEstoque(ficha).classe !== 'stock-ok';
   }
 
   function render() {
@@ -624,7 +810,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
     grid.innerHTML = html;
   }
 
-  function renderPainelCal(k) {
+  function renderPainel(k) {
     document.getElementById('cal-panel-empty').style.display = 'none';
     document.getElementById('cal-panel-content').style.display = 'block';
 
@@ -633,11 +819,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
     document.getElementById('cal-panel-date').textContent =
       data.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
 
-    const aulas = (alocacoes[k] || []).filter(id => {
-      const f = fichasDisponiveis.find(x => x.id === id);
-      return fichaPassaFiltro(f);
-    });
-
+    const aulas = alocacoes[k] || [];
     const elAloc = document.getElementById('cal-allocated');
     elAloc.innerHTML = aulas.length ? aulas.map(id => {
       const f = fichasDisponiveis.find(x => x.id === id);
@@ -709,16 +891,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
 
     if (addBtn) {
       const id = addBtn.dataset.add;
-      const f = fichasDisponiveis.find(x => x.id === id);
-
-      if (!f || fichaBloqueada(f)) {
-        alert(
-          `🚫 Alocação bloqueada\n\n` +
-          `"${f ? f.nome : id}" não possui insumos suficientes em estoque ` +
-          `na ${f && turmas[f.turma] ? turmas[f.turma].nome : 'turma'}.\n\n` +
-          `Reponha o estoque antes de agendar esta receita.`
-        );
-        return;
+      const st = statusEstoque(id);
+      if (st.classe === 'stock-out') {
+        if (!confirm(`⚠️ "${id}" está sem estoque. Alocar mesmo assim?`)) return;
       }
       (alocacoes[diaSelecionado] = alocacoes[diaSelecionado] || []).push(id);
     }
@@ -740,16 +915,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
     viewDate.setMonth(viewDate.getMonth() + 1); render();
   });
 
-  kitchenSel?.addEventListener('change', e => {
-    calFiltroCozinha = e.target.value;
-    render();
-    if (diaSelecionado) renderPainelCal(diaSelecionado);
-  });
-
-  function abrir() {
-    modal.classList.add('show');
-    render();
-  }
+  function abrir() { modal.classList.add('show'); render(); }
   function fechar() { modal.classList.remove('show'); }
 
   document.getElementById('cal-close').addEventListener('click', fechar);
@@ -761,109 +927,143 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && reqModal.c
   });
 })();
 
-// ===== NOTIFICAÇÕES =====
+// ============================================
+// ===== CENTRAL DE NOTIFICAÇÕES =====
+// ============================================
 (function () {
-  const btn    = document.getElementById('notif-btn');
-  const panel  = document.getElementById('notif-panel');
-  const list   = document.getElementById('notif-list');
-  const badge  = document.getElementById('notif-badge');
-  const clear  = document.getElementById('notif-clear');
-  if (!btn || !panel) return;
+  const btn   = $('notif-btn');
+  const panel = $('notif-panel');
+  const list  = $('notif-list');
+  const dot   = $('notif-dot');
+  const clear = $('notif-clear');
 
-  function fichaTurmaMap() {
-    const map = {};
-    Object.entries(receitasPorTurma).forEach(([turmaId, fichas]) => {
-      fichas.forEach(f => map[f] = turmaId);
+  if (!btn || !panel || !list) return;
+
+  const lidas = new Set(JSON.parse(localStorage.getItem('sigec-notif-lidas') || '[]'));
+  const salvarLidas = () =>
+    localStorage.setItem('sigec-notif-lidas', JSON.stringify([...lidas]));
+
+  // Notificações manuais (ex.: solicitações enviadas)
+  const manuais = [];
+
+  function gerarAlertasBase() {
+    const alertas = [];
+
+    for (const key in receitas) {
+      const r = receitas[key];
+      const faltam = r.itens.filter(i => !i.ok);
+      if (faltam.length) {
+        alertas.push({
+          id: `insumo-${key}`, tipo: 'low', icone: 'inventory_2',
+          msg: `${r.nome}: ${faltam.length} insumo(s) a separar`,
+          time: r.local
+        });
+      }
+    }
+
+    for (const key in utensilios) {
+      const faltam = (utensilios[key] || []).filter(u => !u.ok);
+      if (faltam.length) {
+        const nome = receitas[key] ? receitas[key].nome : key;
+        alertas.push({
+          id: `util-${key}`, tipo: 'info', icone: 'blender',
+          msg: `${nome}: ${faltam.length} utensílio(s) a preparar`,
+          time: 'Checklist de utensílios'
+        });
+      }
+    }
+
+    alertas.push({
+      id: 'cd-atraso', tipo: 'cd', icone: 'local_shipping',
+      msg: 'Atraso do CD: entrega de insumos prevista pode atrasar.',
+      time: 'Hoje, 09:12'
     });
-    return map;
+    alertas.push({
+      id: 'retirada', tipo: 'ret', icone: 'event_available',
+      msg: 'Hoje é dia de retirada de insumos da semana.',
+      time: 'Hoje'
+    });
+
+    return alertas;
   }
 
-  function gerarNotificacoes() {
-    const notifs = [];
-    const lidas = JSON.parse(localStorage.getItem('sigec-notif-lidas') || '[]');
-    const fichaTurma = fichaTurmaMap();
-
-    Object.entries(receitas).forEach(([fichaId, receita]) => {
-      const turmaId = fichaTurma[fichaId];
-      const est = estoquePorTurma[turmaId];
-      if (!est) return;
-
-      receita.itens.forEach(item => {
-        const disp = est.insumos?.[item.id] ?? 0;
-        const id = `${turmaId}-${fichaId}-${item.id}`;
-
-        if (disp === 0) {
-          notifs.push({
-            id, tipo: 'err',
-            titulo: `Sem estoque: ${item.nome}`,
-            texto: `${turmas[turmaId].nome} • ${receita.nome} — falta tudo (${item.necessario}${item.unidade}).`
-          });
-        } else if (disp < item.necessario) {
-          notifs.push({
-            id, tipo: 'warn',
-            titulo: `Estoque baixo: ${item.nome}`,
-            texto: `${turmas[turmaId].nome} • falta ${item.necessario - disp}${item.unidade} de ${item.nome}.`
-          });
-        }
-      });
-    });
-
-    return notifs.map(n => ({ ...n, lida: lidas.includes(n.id) }));
+  // Junta manuais (no topo) + automáticas
+  function gerarAlertas() {
+    return [...manuais, ...gerarAlertasBase()];
   }
 
   function render() {
-    const notifs = gerarNotificacoes();
-    const naoLidas = notifs.filter(n => !n.lida).length;
-    badge.hidden = naoLidas === 0;
+    const alertas = gerarAlertas();
+    const naoLidas = alertas.filter(a => !lidas.has(a.id)).length;
 
-    if (!notifs.length) {
-      list.innerHTML = `<p class="notif-empty">🎉 Tudo certo! Nenhuma pendência de estoque.</p>`;
+    if (naoLidas > 0) {
+      dot.style.display = 'flex';
+      dot.textContent = naoLidas > 9 ? '9+' : naoLidas;
+    } else {
+      dot.style.display = 'none';
+    }
+
+    if (!alertas.length) {
+      list.innerHTML = `
+        <div class="notif-empty">
+          <span class="material-symbols-outlined">notifications_off</span>
+          <p>Nenhuma notificação no momento.</p>
+        </div>`;
       return;
     }
 
-    const icone = { err: 'error', warn: 'warning', info: 'check_circle' };
-    list.innerHTML = notifs.map(n => `
-      <div class="notif-item ${n.lida ? '' : 'unread'}">
-        <span class="notif-icon ${n.tipo}">
-          <span class="material-symbols-outlined">${icone[n.tipo]}</span>
-        </span>
-        <div class="notif-body">
-          <p class="notif-title">${n.titulo}</p>
-          <p class="notif-text">${n.texto}</p>
+    list.innerHTML = alertas.map(a => `
+      <div class="notif-item ${lidas.has(a.id) ? 'read' : ''}" data-id="${a.id}">
+        <div class="notif-icon ${a.tipo}">
+          <span class="material-symbols-outlined">${a.icone}</span>
         </div>
-      </div>`).join('');
+        <div class="notif-content">
+          <p class="notif-msg">${a.msg}</p>
+          <p class="notif-time">${a.time}</p>
+        </div>
+        <span class="notif-unread"></span>
+      </div>
+    `).join('');
   }
 
-  function marcarTodasLidas() {
-    const ids = gerarNotificacoes().map(n => n.id);
-    localStorage.setItem('sigec-notif-lidas', JSON.stringify(ids));
+  window.atualizarNotificacoes = render;
+
+  // Dispara notificação manual (usado nas solicitações)
+  window.adicionarNotificacaoManual = function (msg, icone = 'notifications') {
+    manuais.unshift({
+      id: `manual-${Date.now()}`, tipo: 'info', icone,
+      msg, time: new Date().toLocaleString('pt-BR')
+    });
     render();
-  }
+  };
 
   function toggle(open) {
-    const abrir = open ?? !panel.classList.contains('show');
-    panel.classList.toggle('show', abrir);
-    btn.setAttribute('aria-expanded', abrir);
-    if (abrir) render();
+    panel.classList.toggle('show',
+      open !== undefined ? open : !panel.classList.contains('show'));
   }
 
   btn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
-  clear.addEventListener('click', marcarTodasLidas);
+
+  list.addEventListener('click', e => {
+    const item = e.target.closest('.notif-item');
+    if (!item) return;
+    lidas.add(item.dataset.id);
+    salvarLidas();
+    render();
+  });
+
+  clear?.addEventListener('click', () => {
+    gerarAlertas().forEach(a => lidas.add(a.id));
+    salvarLidas();
+    render();
+  });
 
   document.addEventListener('click', e => {
-    if (!panel.contains(e.target) && !btn.contains(e.target)) toggle(false);
+    if (!panel.contains(e.target) && !e.target.closest('#notif-btn')) {
+      toggle(false);
+    }
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('show')) toggle(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false); });
 
   render();
 })();
-
-// ===== INICIALIZAÇÃO GERAL =====
-turmaAtual   = '2024.1.A';
-turmaSelect.value = turmaAtual;
-popularReceitasDaTurma(turmaAtual);
-receitaAtual = (receitasPorTurma[turmaAtual] || Object.keys(receitas))[0];
-select.value = receitaAtual;
-
-renderTudo();
-highlightCard(receitaAtual);
