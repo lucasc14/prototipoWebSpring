@@ -46,7 +46,23 @@
       <span class="material-symbols-outlined">search</span>
       <input type="text" placeholder="Buscar receita, turma...">
     </div>
-    <button class="icon-btn"><span class="material-symbols-outlined">notifications</span><span class="badge-dot"></span></button>
+
+    <!-- ===== NOTIFICAÇÕES ===== -->
+    <div class="notif-wrap">
+      <button class="icon-btn" id="notif-btn" aria-label="Notificações" aria-expanded="false">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="badge-dot" id="notif-badge" hidden></span>
+      </button>
+
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-head">
+          <h3>Notificações</h3>
+          <button class="notif-clear" id="notif-clear">Marcar todas como lidas</button>
+        </div>
+        <div class="notif-list" id="notif-list"></div>
+      </div>
+    </div>
+
     <div class="user-box">
       <div class="user-info">
         <p class="user-name">Chef Ricardo Silva</p>
@@ -65,7 +81,7 @@
       <div class="hero-text">
         <p class="hero-date">Quarta-feira, 17 de Junho</p>
         <h2 class="hero-title">Bom dia, Chef Ricardo!</h2>
-        <p class="hero-sub">Você tem <strong>3 receitas</strong> hoje. A próxima começa às <strong>13:30</strong>.</p>
+        <p class="hero-sub">Você tem <strong>3 turmas</strong> hoje. A próxima começa às <strong>13:30</strong>.</p>
       </div>
     </section>
 
@@ -88,7 +104,7 @@
       </div>
 
       <!-- Concluída -->
-      <div class="class-card done" data-recipe="confeitaria" data-turma="2024.1.C">
+      <div class="class-card done" data-recipe="confeitaria_bolo" data-turma="2024.1.C">
         <div class="class-time"><p class="t-main">08:00</p><p class="t-end">12:00</p></div>
         <div class="divider"></div>
         <div class="class-info">
@@ -99,7 +115,7 @@
       </div>
 
       <!-- Em Curso -->
-      <div class="class-card running flight-accent" data-recipe="panificacao" data-turma="2024.1.A">
+      <div class="class-card running flight-accent" data-recipe="panificacao_pao" data-turma="2024.1.A">
         <div class="class-time"><p class="t-main c-secondary">13:30</p><p class="t-end">17:30</p></div>
         <div class="divider sec"></div>
         <div class="class-info">
@@ -111,7 +127,7 @@
       </div>
 
       <!-- Pendente -->
-      <div class="class-card" data-recipe="asia" data-turma="2024.2.N">
+      <div class="class-card" data-recipe="asia_yakisoba" data-turma="2024.2.N">
         <div class="class-time"><p class="t-main">19:00</p><p class="t-end">22:30</p></div>
         <div class="divider"></div>
         <div class="class-info">
@@ -134,7 +150,7 @@
             <h2 class="ch-title">Checklist de Insumos</h2>
           </div>
 
-          <!-- ===== NOVO: SELETOR DE TURMA (RF06) ===== -->
+          <!-- SELETOR DE TURMA (RF06) -->
           <label class="field-label" for="turma-select">Turma / Laboratório</label>
           <div class="select-wrap">
             <select id="turma-select"></select>
@@ -143,11 +159,7 @@
 
           <label class="field-label" for="recipe-select">Selecione a aula / receita</label>
           <div class="select-wrap">
-            <select id="recipe-select">
-              <option value="confeitaria">08:00 • Técnicas de Confeitaria</option>
-              <option value="panificacao" selected>13:30 • Panificação Clássica</option>
-              <option value="asia">19:00 • Cozinha Internacional: Ásia</option>
-            </select>
+            <select id="recipe-select"></select>
             <span class="material-symbols-outlined select-arrow">expand_more</span>
           </div>
           <p class="ch-recipe">Receita: <strong id="recipe-name">—</strong></p>
@@ -229,11 +241,14 @@
         <button class="cal-nav-btn" id="cal-prev"><span class="material-symbols-outlined">chevron_left</span></button>
         <span class="cal-month" id="cal-month">Junho 2026</span>
         <button class="cal-nav-btn" id="cal-next"><span class="material-symbols-outlined">chevron_right</span></button>
+
+        <!-- FILTRO DE COZINHA (ÚNICO) -->
         <div class="cal-kitchen-filter">
           <select id="cal-kitchen">
             <option value="todas">Todas as cozinhas</option>
             <option value="lab01">Padaria Lab 01</option>
             <option value="lab02">Cozinha Pedagógica 02</option>
+            <option value="lab04">Cozinha Pedagógica 04</option>
           </select>
         </div>
       </div>
