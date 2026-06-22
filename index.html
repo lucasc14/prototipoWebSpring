@@ -82,7 +82,7 @@
 
     <section class="quick-actions">
       <button class="qa-card"><span class="material-symbols-outlined">menu_book</span><span>Ver Receitas</span></button>
-      <button class="qa-card"><span class="material-symbols-outlined">library_add</span><span>Nova Receitas</span></button>
+      <button class="qa-card"><span class="material-symbols-outlined">library_add</span><span>Nova Receita</span></button>
       <button class="qa-card"><span class="material-symbols-outlined">checklist</span><span>Lista de Insumos</span></button>
       <button class="qa-card"><span class="material-symbols-outlined">checklist</span><span>Lista de Utensílios</span></button>
     </section>
@@ -135,7 +135,7 @@
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
             <span class="material-symbols-outlined">checklist</span>
-            <h2 class="ch-title">Checklist de Insumos</h2>
+            <h2 class="ch-title">Checklist da Aula (Insumos)</h2>
           </div>
 
           <label class="field-label" for="turma-select">Turma / Laboratório</label>
@@ -152,49 +152,27 @@
           <p class="ch-recipe">Receita: <strong id="recipe-name">—</strong></p>
           <p class="ch-loc" id="recipe-loc">—</p>
           <p class="ch-turma-badge" id="turma-badge">—</p>
-
-          <div class="ch-tabs">
-            <button class="ch-tab active" data-target="tab-recebimento">Recebimento do CD</button>
-            <button class="ch-tab" data-target="tab-execucao">Execução da Aula</button>
-          </div>
         </div>
 
-        <div class="ch-tab-content active" id="tab-recebimento">
+        <div class="ch-tab-content active" id="tab-principal">
           <div class="progress-block">
             <div class="progress-info">
-              <span class="bold" id="rec-progress-text">0 de 0 itens</span>
-              <span class="muted"><span id="rec-progress-pct">0</span>%</span>
+              <span class="bold" id="main-progress-text">0 de 0 itens</span>
+              <span class="muted"><span id="main-progress-pct">0</span>%</span>
             </div>
-            <div class="progress-track"><div id="rec-progress-bar" class="progress-fill"></div></div>
+            <div class="progress-track"><div id="main-progress-bar" class="progress-fill"></div></div>
           </div>
           
-          <div id="checklist-rec" class="checklist-items"></div>
+          <div id="checklist-main" class="checklist-items"></div>
           
           <div class="add-row">
             <button class="btn-add" id="btn-add-insumo">
-              <span class="material-symbols-outlined">add</span>Adicionar insumo extra
+              <span class="material-symbols-outlined">add</span>Solicitar insumo extra urgente
             </button>
           </div>
           <div class="checklist-footer">
-            <button class="btn-ghost" onclick="alert('Avaria registrada no histórico do desktop!')">Registrar Avaria</button>
-            <button class="btn-confirm">Confirmar Chegada</button>
-          </div>
-        </div>
-
-        <div class="ch-tab-content" id="tab-execucao">
-          <div class="progress-block">
-            <div class="progress-info">
-              <span class="bold" id="exe-progress-text">0 de 0 itens</span>
-              <span class="muted"><span id="exe-progress-pct">0</span>%</span>
-            </div>
-            <div class="progress-track"><div id="exe-progress-bar" class="progress-fill"></div></div>
-          </div>
-          
-          <div id="checklist-exe" class="checklist-items"></div>
-          
-          <div class="checklist-footer">
-            <button id="btn-reset" class="btn-ghost">Limpar</button>
-            <button class="btn-confirm">Confirmar Separação</button>
+            <button id="main-btn-reset" class="btn-ghost">Limpar Marcações</button>
+            <button class="btn-confirm">Confirmar Separação para Aula</button>
           </div>
         </div>
       </section>
@@ -222,7 +200,7 @@
 
         <div class="add-row">
           <button class="btn-add" id="btn-add-util">
-            <span class="material-symbols-outlined">add</span>Adicionar utensílio
+            <span class="material-symbols-outlined">add</span>Adicionar utensílio extra
           </button>
         </div>
 
@@ -299,11 +277,67 @@
       <button class="modal-close" id="obs-close"><span class="material-symbols-outlined">close</span></button>
     </div>
     <p class="modal-item" id="obs-item-name">—</p>
-    <label class="field-label dark" for="obs-text">Anotação</label>
-    <textarea id="obs-text" class="obs-textarea" placeholder="Ex.: substituir por farinha integral, faltou 200g..."></textarea>
+    <label class="field-label dark" for="obs-text">Anotação / Avaria</label>
+    <textarea id="obs-text" class="obs-textarea" placeholder="Ex.: substituir por farinha integral, pacote rasgado..."></textarea>
     <div class="modal-footer">
       <button class="btn-ghost" id="obs-cancel">Cancelar</button>
       <button class="btn-confirm" id="obs-save">Salvar Observação</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="extra-modal">
+  <div class="modal flight-accent">
+    <div class="modal-head">
+      <h3 class="modal-title">Solicitar Insumo Extra</h3>
+      <button class="modal-close" id="extra-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">O item será registrado no checklist e enviado para validação da equipe de estoque.</p>
+    
+    <label class="field-label dark">Nome do Insumo</label>
+    <input type="text" id="extra-name" class="obs-textarea" style="min-height: 40px; margin-bottom: 12px; height: auto;" placeholder="Ex: Azeite Extra Virgem">
+    
+    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <div style="flex: 1;">
+            <label class="field-label dark">Quantidade</label>
+            <input type="number" id="extra-qtd" class="obs-textarea" style="min-height: 40px; height: auto;" placeholder="Ex: 500">
+        </div>
+        <div style="flex: 1;">
+            <label class="field-label dark">Unidade</label>
+            <input type="text" id="extra-un" class="obs-textarea" style="min-height: 40px; height: auto;" placeholder="Ex: ml, g, un">
+        </div>
+    </div>
+
+    <label class="field-label dark">Observação / Motivo (Opcional)</label>
+    <textarea id="extra-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Faltou para finalizar o prato..."></textarea>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="extra-cancel">Cancelar</button>
+      <button class="btn-confirm" id="extra-save">Adicionar ao Checklist</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="util-modal">
+  <div class="modal flight-accent">
+    <div class="modal-head">
+      <h3 class="modal-title">Adicionar Utensílio Extra</h3>
+      <button class="modal-close" id="util-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Adicione um utensílio necessário que não estava previsto na ficha da receita.</p>
+    
+    <label class="field-label dark">Nome do Utensílio</label>
+    <input type="text" id="util-name" class="obs-textarea" style="min-height: 40px; margin-bottom: 12px; height: auto;" placeholder="Ex: Liquidificador Industrial">
+    
+    <label class="field-label dark">Quantidade (un)</label>
+    <input type="number" id="util-qtd" class="obs-textarea" style="min-height: 40px; margin-bottom: 12px; height: auto;" placeholder="Ex: 2">
+
+    <label class="field-label dark">Observação / Motivo (Opcional)</label>
+    <textarea id="util-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Precisamos de mais um para agilizar as equipes..."></textarea>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="util-cancel">Cancelar</button>
+      <button class="btn-confirm" id="util-save">Adicionar Utensílio</button>
     </div>
   </div>
 </div>
