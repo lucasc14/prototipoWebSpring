@@ -138,6 +138,49 @@ body{
 .status-pending{background:var(--surface-high);color:var(--on-surface-variant)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
 
+/* ===== ABAS (TABS) DE CHECKLIST ===== */
+.ch-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  border-radius: var(--r);
+}
+.ch-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--primary-fixed-dim);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: 0.2s;
+}
+.ch-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.ch-tab.active {
+  background: var(--surface-lowest);
+  color: var(--primary);
+}
+.ch-tab-content {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+}
+.ch-tab-content.active {
+  display: flex;
+  animation: fadeInTab 0.3s ease;
+}
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ===== CHECKLIST ===== */
 .checklist-card{background:var(--surface-lowest);border:1px solid var(--outline-variant);
   border-radius:var(--r-lg);overflow:hidden}
@@ -173,7 +216,7 @@ body{
 .check-item input:checked ~ .check-box{background:var(--secondary-container);border-color:var(--secondary-container)}
 .check-item input:checked ~ .check-box .material-symbols-outlined{opacity:1}
 
-.checklist-footer{padding:20px 24px;display:flex;gap:12px;border-top:1px solid var(--surface-variant)}
+.checklist-footer{padding:20px 24px;display:flex;gap:12px;border-top:1px solid var(--surface-variant);margin-top:auto}
 .btn-ghost{flex:1;background:transparent;border:1px solid var(--primary-container);color:var(--primary-container);
   padding:11px;font-weight:600;font-size:14px;border-radius:var(--r);cursor:pointer;transition:.2s}
 .btn-ghost:hover{background:var(--surface-low)}
@@ -284,12 +327,17 @@ body{
 .cal-kitchen-filter{margin-left:auto}
 #cal-kitchen{appearance:none;background:#fff;color:var(--primary);border:none;border-radius:var(--r);
   padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+
+/* Corpo */
 .cal-body{display:grid;grid-template-columns:1fr 320px;flex:1;overflow:hidden}
 .cal-grid-wrap{padding:20px;overflow-y:auto}
 .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
 .cal-weekdays span{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;
   letter-spacing:.05em;color:var(--on-surface-variant)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:90px;gap:6px}
+
+/* Dia */
+/* 🔧 CORRIGIDO: removido aspect-ratio:1; min-height define a altura */
 .cal-day{min-height:90px;border:1px solid var(--outline-variant);border-radius:var(--r);
   padding:8px;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:.2s;
   background:var(--surface-lowest);position:relative}
@@ -306,8 +354,17 @@ body{
 .cal-day-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:auto}
 .cal-day-dots i{width:6px;height:6px;border-radius:50%;background:var(--secondary-container)}
 .cal-day.selected .cal-day-dots i{background:#fff}
-.cal-legend{display:flex;gap:16px;margin-top:32px;padding-top:20px;
-  border-top:1px solid var(--outline-variant);flex-wrap:wrap}
+
+/* Legenda */
+.cal-legend{
+  display:flex;
+  gap:16px;
+  margin-top:32px;
+  padding-top:20px;
+  border-top:1px solid var(--outline-variant); /* separador sutil */
+  flex-wrap:wrap;
+}
+
 .cal-legend span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--on-surface-variant)}
 .dot{width:10px;height:10px;border-radius:50%}
 .dot-class{background:var(--secondary-container)}
@@ -338,105 +395,3 @@ body{
   .cal-grid{grid-auto-rows:64px}
   .cal-day{min-height:64px;padding:4px}
 }
-
-/* ===== CENTRAL DE NOTIFICAÇÕES ===== */
-.notif-wrap{position:relative}
-.notif-wrap .badge-dot{top:2px;right:2px;width:18px;height:18px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:#fff;line-height:1;
-  background:var(--error);border:2px solid var(--background)}
-.notif-panel{display:none;position:absolute;top:calc(100% + 12px);right:0;
-  width:380px;max-width:calc(100vw - 32px);background:var(--surface-lowest);
-  border:1px solid var(--outline-variant);border-radius:var(--r-lg);
-  box-shadow:var(--shadow-2);z-index:55;overflow:hidden;animation:modalIn .2s ease}
-.notif-panel.show{display:block}
-.notif-head{display:flex;align-items:center;justify-content:space-between;
-  padding:16px 20px;background:var(--primary);color:#fff;border-bottom:4px solid var(--secondary-container)}
-.notif-title{font-size:16px;font-weight:600}
-.notif-clear{background:none;border:none;cursor:pointer;color:var(--secondary-container);
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;transition:.2s}
-.notif-clear:hover{color:#fff}
-.notif-list{max-height:420px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--outline-variant) transparent}
-.notif-list::-webkit-scrollbar{width:8px}
-.notif-list::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:var(--r-full)}
-.notif-item{display:flex;gap:12px;padding:14px 20px;cursor:pointer;
-  border-bottom:1px solid var(--surface-variant);transition:.2s;position:relative}
-.notif-item:hover{background:var(--surface-low)}
-.notif-item.read{opacity:.5}
-.notif-item.read .notif-unread{visibility:hidden}
-.notif-icon{width:38px;height:38px;border-radius:var(--r);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center}
-.notif-icon .material-symbols-outlined{font-size:20px}
-.notif-icon.cd{background:var(--error-container);color:var(--error)}
-.notif-icon.low{background:var(--secondary-fixed);color:var(--secondary)}
-.notif-icon.ret{background:#dcfce7;color:#15803d}
-.notif-icon.info{background:var(--surface-high);color:var(--primary)}
-.notif-content{flex:1;min-width:0}
-.notif-msg{font-size:13px;font-weight:600;color:var(--on-surface);line-height:1.35}
-.notif-time{font-size:11px;color:var(--on-surface-variant);margin-top:3px}
-.notif-unread{width:8px;height:8px;border-radius:50%;background:var(--secondary-container);flex-shrink:0;margin-top:6px}
-.notif-empty{padding:40px 20px;text-align:center;color:var(--on-surface-variant);
-  font-size:13px;display:flex;flex-direction:column;align-items:center;gap:10px}
-.notif-empty .material-symbols-outlined{font-size:40px;color:var(--outline-variant)}
-@media(max-width:480px){
-  .notif-panel{position:fixed;top:64px;right:8px;left:8px;width:auto}
-}
-
-/* ===== SOLICITAÇÃO ADICIONAL ===== */
-.btn-solicitar{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:11px;border:1.5px solid var(--primary-container);
-  background:transparent;color:var(--primary-container);
-  font-weight:600;font-size:14px;border-radius:var(--r);cursor:pointer;transition:.2s}
-.btn-solicitar:hover{background:var(--surface-low)}
-.btn-solicitar .material-symbols-outlined{font-size:20px}
-.req-input{width:100%;border:1px solid var(--outline-variant);border-radius:var(--r);
-  padding:11px 12px;font-size:14px;color:var(--on-surface);outline:none;
-  margin-bottom:14px;transition:.2s;font-family:'Hanken Grotesk',sans-serif;background:#fff}
-.req-input:focus{border-bottom:2px solid var(--secondary-container)}
-#req-urgencia,#avaria-tipo{appearance:none;cursor:pointer;font-weight:600;color:var(--primary)}
-.check-item.is-request{border-style:dashed;border-color:var(--primary-container);
-  background:var(--surface-low);cursor:default}
-.check-item.is-request:hover{background:var(--surface-low)}
-.check-item.is-request .req-ico{color:var(--primary-container);flex-shrink:0}
-.req-badge{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
-  padding:3px 8px;border-radius:var(--r-full);font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.04em}
-.req-badge .material-symbols-outlined{font-size:13px}
-.req-badge.pending{background:var(--secondary-fixed);color:var(--secondary)}
-.req-badge.approved{background:#dcfce7;color:#15803d}
-.req-badge.rejected{background:var(--error-container);color:var(--error)}
-.req-urg{color:var(--error);font-weight:700;margin-left:6px;font-size:12px}
-.req-del{background:none;border:none;cursor:pointer;color:var(--outline);
-  display:flex;padding:2px;border-radius:var(--r-full);transition:.2s;flex-shrink:0}
-.req-del:hover{background:var(--error-container);color:var(--error)}
-
-/* ============================================ */
-/* ===== ABAS DE CHECKLIST (RF04 - NOVO) ===== */
-/* ============================================ */
-.checklist-tabs{display:flex;gap:6px;background:var(--surface-high);
-  padding:6px;border-radius:var(--r-lg);width:fit-content;margin-bottom:-12px}
-.ch-tab{display:flex;align-items:center;gap:8px;padding:10px 20px;border:none;
-  background:transparent;color:var(--on-surface-variant);font-weight:600;
-  font-size:14px;border-radius:var(--r);cursor:pointer;transition:.2s}
-.ch-tab .material-symbols-outlined{font-size:20px}
-.ch-tab:hover{color:var(--primary)}
-.ch-tab.active{background:var(--surface-lowest);color:var(--primary);box-shadow:var(--shadow-2)}
-
-.ch-mode-badge{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.05em;padding:4px 10px;border-radius:var(--r-full);
-  background:rgba(255,255,255,.15);color:var(--secondary-fixed)}
-
-.btn-avaria{display:inline-flex;align-items:center;gap:4px;background:none;border:none;
-  cursor:pointer;color:var(--error);font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.03em;padding:4px 6px;
-  border-radius:var(--r);transition:.2s;flex-shrink:0}
-.btn-avaria:hover{background:var(--error-container)}
-.btn-avaria .material-symbols-outlined{font-size:16px}
-
-.check-item.has-avaria{border-color:var(--error);background:var(--error-container)}
-.avaria-flag{display:none;align-items:center;color:var(--error);flex-shrink:0}
-.avaria-flag .material-symbols-outlined{font-size:18px}
-.check-item.has-avaria .avaria-flag{display:inline-flex}
-
-.check-item input:checked ~ .check-box.recv-box{
-  background:var(--primary-container);border-color:var(--primary-container)}
