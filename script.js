@@ -142,7 +142,7 @@ const estoquePorTurma = {
   }
 };
 
-const observacoes = {}; 
+const observacoes = {};
 
 let receitaAtual;
 let turmaAtual;
@@ -167,26 +167,26 @@ function obsKey(tipo, id) { return `${turmaAtual}|${receitaAtual}|${tipo}|${id}`
 // ===== Configuração Unificada dos Painéis =====
 const painels = {
   main: {
-    tipo: 'insumo', 
+    tipo: 'insumo',
     getItens: () => receitas[receitaAtual].itens,
-    lista: $('checklist-main'), 
-    name: $('recipe-name'), 
-    loc: $('recipe-loc'), 
+    lista: $('checklist-main'),
+    name: $('recipe-name'),
+    loc: $('recipe-loc'),
     badge: $('turma-badge'),
-    pText: $('main-progress-text'), 
-    pPct: $('main-progress-pct'), 
+    pText: $('main-progress-text'),
+    pPct: $('main-progress-pct'),
     pBar: $('main-progress-bar'),
     rotulo: 'Checklist da Aula'
   },
   util: {
-    tipo: 'util', 
+    tipo: 'util',
     getItens: () => utensiliosFicha[receitaAtual] || [],
-    lista: $('util-checklist'), 
-    name: $('util-recipe-name'), 
-    loc: $('util-recipe-loc'), 
+    lista: $('util-checklist'),
+    name: $('util-recipe-name'),
+    loc: $('util-recipe-loc'),
     badge: $('util-turma-badge'),
-    pText: $('util-progress-text'), 
-    pPct: $('util-progress-pct'), 
+    pText: $('util-progress-text'),
+    pPct: $('util-progress-pct'),
     pBar: $('util-progress-bar'),
     rotulo: 'Lista de utensílios'
   }
@@ -210,13 +210,14 @@ function aplicarScrollAdaptativo(container, qtd, rotulo) {
 }
 
 function updateProgress(p) {
-  const itens = p.getItens();
-  const total = itens.length;
-  const done  = itens.filter(i => statusItem(p.tipo, i).ok).length;
-  const pct   = total ? Math.round((done / total) * 100) : 0;
-  if(p.pText) p.pText.textContent = `${done} de ${total} itens em estoque`;
-  if(p.pPct)  p.pPct.textContent  = pct;
-  if(p.pBar)  p.pBar.style.width  = pct + '%';
+  const checkboxes = p.lista.querySelectorAll('input[type="checkbox"]');
+  const total = checkboxes.length;
+  const done = p.lista.querySelectorAll('input[type="checkbox"]:checked').length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  if (p.pText) p.pText.textContent = `${done} de ${total} itens marcados`;
+  if (p.pPct)  p.pPct.textContent  = pct;
+  if (p.pBar)  p.pBar.style.width  = pct + '%';
 }
 
 function renderPainel(p) {
@@ -234,23 +235,23 @@ function renderPainel(p) {
     const disp = estoqueDisponivel(p.tipo, it.id);
     const s = statusItem(p.tipo, it);
     const obs = observacoes[obsKey(p.tipo, it.id)];
-    
+
     let tagHtml = `<span class="estoque-tag ${s.st}">${s.label}</span>`;
-    let disabledAttr = ''; 
-    
+    let disabledAttr = '';
+
     if (it.pendente) {
       tagHtml = `<span class="estoque-tag baixo" style="background:#fff3cd; color:#856404; border-color:#ffeeba;">Pendente Aprovação</span>`;
-      disabledAttr = `disabled`; 
+      disabledAttr = `disabled`;
     }
 
     const clsEstoque = it.pendente ? 'estoque-baixo' : (s.st === 'ok' ? '' : (s.st === 'falta' ? 'estoque-falta' : 'estoque-baixo'));
-    
+
     return `
       <label class="check-item ${obs ? 'has-obs' : ''} ${clsEstoque}">
         <input type="checkbox" data-id="${it.id}" ${disabledAttr}>
         <span class="check-box"><span class="material-symbols-outlined">check</span></span>
-        <span class="check-label" data-obs="${it.id}">${it.nome}</span>
-        <span class="obs-flag" title="${obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
+        <span class="check-label">${it.nome}</span>
+        <span class="obs-flag" data-obs="${it.id}" title="${obs || 'Adicionar observação'}"><span class="material-symbols-outlined">sticky_note_2</span></span>
         ${tagHtml}
         <span class="check-qty">${it.pendente ? '?' : disp}/${it.necessario}${it.unidade}</span>
       </label>`;
@@ -266,24 +267,33 @@ function renderTudo() {
 }
 
 function configurarPainel(p, btnResetId) {
+  // Abre observação SOMENTE ao clicar no ícone de nota (libera o clique do checkbox)
   p.lista.addEventListener('click', e => {
-    const label = e.target.closest('.check-label');
-    if (label) {
+    const flag = e.target.closest('.obs-flag');
+    if (flag) {
       e.preventDefault();
-      abrirObs(p.tipo, label.dataset.obs);
+      abrirObs(p.tipo, flag.dataset.obs);
     }
   });
 
-  if(btnResetId && $(btnResetId)) {
+  // Recalcula o progresso toda vez que um checkbox muda de estado
+  p.lista.addEventListener('change', e => {
+    if (e.target.type === 'checkbox') {
+      updateProgress(p);
+    }
+  });
+
+  if (btnResetId && $(btnResetId)) {
     $(btnResetId).addEventListener('click', () => {
-      // CORREÇÃO: Limpa apenas visualmente
       const checkboxes = p.lista.querySelectorAll('input[type="checkbox"]:not(:disabled)');
       checkboxes.forEach(cb => cb.checked = false);
+      updateProgress(p);
     });
   }
 }
 
-configurarPainel(painels.main, 'main-btn-reset'); 
+// Inicializa os listeners dos dois painéis
+configurarPainel(painels.main, 'main-btn-reset');
 configurarPainel(painels.util, 'util-btn-reset');
 
 
@@ -309,22 +319,22 @@ extraModal.addEventListener('click', e => { if (e.target === extraModal) fecharM
 $('extra-save').addEventListener('click', () => {
   const nome = $('extra-name').value.trim();
   if (!nome) return alert("Por favor, insira o nome do insumo.");
-  
+
   const necessario = parseFloat($('extra-qtd').value) || 0;
   const unidade = $('extra-un').value.trim() || 'un';
   const obs = $('extra-obs').value.trim();
   const id = 'item_extra_' + Date.now();
 
   painels.main.getItens().push({ id, nome, necessario, unidade, pendente: true });
-  
+
   const e = estoquePorTurma[turmaAtual];
-  e.insumos[id] = 0; 
+  e.insumos[id] = 0;
   if (obs) observacoes[obsKey('insumo', id)] = obs;
 
   renderPainel(painels.main);
   fecharModalExtra();
   if (window.atualizarNotificacoes) window.atualizarNotificacoes();
-  
+
   alert(`A solicitação urgente para "${nome}" foi enviada para o Desktop de Gestão de Estoque.`);
 });
 
@@ -350,7 +360,7 @@ utilModal.addEventListener('click', e => { if (e.target === utilModal) fecharMod
 $('util-save').addEventListener('click', () => {
   const nome = $('util-name').value.trim();
   if (!nome) return alert("Por favor, insira o nome do utensílio.");
-  
+
   const necessario = parseFloat($('util-qtd').value) || 0;
   const obs = $('util-obs').value.trim();
   const id = 'item_util_' + Date.now();
@@ -365,7 +375,7 @@ $('util-save').addEventListener('click', () => {
   renderPainel(painels.util);
   fecharModalUtil();
   if (window.atualizarNotificacoes) window.atualizarNotificacoes();
-  
+
   alert(`A solicitação de empréstimo para o utensílio "${nome}" foi enviada para o Desktop de Gestão de Estoque.`);
 });
 
@@ -373,7 +383,6 @@ $('util-save').addEventListener('click', () => {
 // ===== CONCLUSÃO DE AULA E RELATO GERAL (RF10) =====
 const finishModal = $('finish-modal');
 
-// MUDANÇA AQUI: Usa uma classe exclusiva "btn-finish-class" para evitar ativar no botão de Nova Ficha
 const btnsFinishClass = document.querySelectorAll('.btn-finish-class');
 
 btnsFinishClass.forEach(btn => {
@@ -400,10 +409,10 @@ $('finish-save').addEventListener('click', () => {
     if (card.dataset.recipe === receitaAtual && card.dataset.turma === turmaAtual) {
       card.classList.remove('running', 'flight-accent');
       card.classList.add('done');
-      
+
       const divider = card.querySelector('.divider.sec');
       if (divider) divider.classList.remove('sec');
-      
+
       const timeMain = card.querySelector('.t-main.c-secondary');
       if (timeMain) timeMain.classList.remove('c-secondary');
 
@@ -428,9 +437,9 @@ if ($('btn-sobras')) {
   $('btn-sobras').addEventListener('click', () => {
     $('sobras-name').value = '';
     const listaSobras = $('sobras-list');
-    
+
     const itensAtuais = painels.main.getItens();
-    
+
     if (itensAtuais.length === 0) {
       return alert("Não há itens nesta receita para gerar sobras.");
     }
@@ -586,7 +595,7 @@ document.querySelectorAll('button').forEach(el => {
   el.addEventListener('mouseleave', () => el.style.transform = 'scale(1)');
 });
 
-// Modal de observação (ao clicar nos itens)
+// Modal de observação (ao clicar no ícone de nota)
 const obsModal = $('obs-modal');
 const obsName  = $('obs-item-name');
 const obsText  = $('obs-text');
@@ -596,7 +605,7 @@ let obsTipoAtual = null;
 function abrirObs(tipo, id) {
   obsTipoAtual = tipo;
   obsIdAtual   = id;
-  const panel = painels[tipo] || painels.main; 
+  const panel = painels[tipo] || painels.main;
   const item = panel.getItens().find(i => i.id === id);
   obsName.textContent = item ? item.nome : '';
   obsText.value = observacoes[obsKey(tipo, id)] || '';
@@ -651,7 +660,6 @@ highlightCard(receitaAtual);
     "Cozinha Pedagógica 04": "lab04"
   };
 
-  // Aqui é onde os cards da aula criativa também aparecerão quando criados!
   const fichasDisponiveis = [
     { id: 'confeitaria_bolo',     nome: 'Confeitaria: Bolo de Cenoura', turma: '2024.1.C' },
     { id: 'confeitaria_torta',    nome: 'Confeitaria: Torta de Maçã',   turma: '2024.1.C' },
@@ -661,11 +669,9 @@ highlightCard(receitaAtual);
     { id: 'asia_sushi',           nome: 'Ásia: Sushi & Sashimi',        turma: '2024.2.N' }
   ];
 
-  // Adiciona suporte no calendário para encontrar as receitas criadas no runtime
   function getFichaCompleta(id) {
     let f = fichasDisponiveis.find(x => x.id === id);
     if (!f && receitas[id]) {
-       // Se foi criada via "Sobras"
        let turmaDaSobras = Object.keys(receitasPorTurma).find(k => receitasPorTurma[k].includes(id));
        f = { id: id, nome: receitas[id].nome, turma: turmaDaSobras };
        fichasDisponiveis.push(f);
@@ -702,7 +708,7 @@ highlightCard(receitaAtual);
     const e = estoquePorTurma[ficha.turma];
     if (!e) return { classe: 'stock-out', txt: 'Turma sem estoque' };
     const total = r.itens.length;
-    if (total === 0) return { classe: 'stock-ok', txt: 'Estoque OK' }; // Para sobras sem itens
+    if (total === 0) return { classe: 'stock-ok', txt: 'Estoque OK' };
     let ok = 0, algum = 0;
     r.itens.forEach(it => {
       const disp = e.insumos?.[it.id] ?? 0;
@@ -786,14 +792,13 @@ highlightCard(receitaAtual);
 
     const elDisp = document.getElementById('cal-available');
     const alocadasDoDia = alocacoes[k] || [];
-    
-    // Atualiza lista de disponíveis pegando as que foram criadas em runtime
+
     Object.keys(receitas).forEach(idKey => getFichaCompleta(idKey));
-    
+
     const livres = fichasDisponiveis.filter(f =>
       fichaPassaFiltro(f) && !alocadasDoDia.includes(f.id)
     );
-    
+
     elDisp.innerHTML = livres.length ? livres.map(f => {
       const st = statusEstoque(f);
       const bloqueada = fichaBloqueada(f);
@@ -848,10 +853,10 @@ highlightCard(receitaAtual);
         alert(`🚫 Alocação bloqueada.\nReponha o estoque antes de agendar.`);
         return;
       }
-      
+
       const alocacoesNoDia = alocacoes[diaSelecionado] || [];
       const cozinhaDaFichaAtual = turmas[f.turma].cozinha;
-      
+
       const conflito = alocacoesNoDia.some(idAlocado => {
         const fichaAlocada = getFichaCompleta(idAlocado);
         if (fichaAlocada) {
@@ -999,7 +1004,7 @@ highlightCard(receitaAtual);
         </div>
       </div>`).join('');
   }
-  
+
   window.atualizarNotificacoes = render;
 
   function marcarTodasLidas() {

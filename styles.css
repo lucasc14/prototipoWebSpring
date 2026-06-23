@@ -15,7 +15,6 @@
   --surface-lowest:#ffffff; --surface-low:#f4f2fd;
   --surface:#eeedf7; --surface-high:#e8e7f1; --surface-variant:#e3e1ec;
 
-  /* Formas */
   --r-sm:.125rem; --r:.25rem; --r-lg:.5rem; --r-full:9999px;
   --shadow-2:0 4px 20px rgba(0,61,107,.08);
   --clip-tr:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
@@ -211,7 +210,16 @@ body{
 .check-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface-lowest);
   border:1px solid var(--outline-variant);border-radius:var(--r);cursor:pointer;transition:.2s}
 .check-item:hover{border-color:var(--primary-container);background:var(--surface-low)}
-.check-item input{display:none}
+
+/* 🔧 CORRIGIDO: input oculto, porém funcional para o toggle */
+.check-item input{
+  position:absolute;
+  opacity:0;
+  width:0;
+  height:0;
+  pointer-events:none;
+}
+
 .check-box{width:24px;height:24px;border-radius:var(--r);border:2px solid var(--outline-variant);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s}
 .check-box .material-symbols-outlined{color:#fff;font-size:18px;opacity:0}
@@ -259,11 +267,12 @@ body{
 .obs-textarea:focus{border-bottom:2px solid var(--secondary-container)}
 .modal-footer{display:flex;gap:12px;margin-top:20px}
 
-/* Indicador: item com observação */
+/* Indicador: item com observação + ícone de nota sempre clicável */
 .check-item.has-obs{border-color:var(--secondary-container)}
-.obs-flag{display:none;align-items:center;color:var(--secondary-container);flex-shrink:0}
+.obs-flag{display:inline-flex;align-items:center;cursor:pointer;color:var(--outline-variant);flex-shrink:0;transition:.2s}
 .obs-flag .material-symbols-outlined{font-size:18px}
-.check-item.has-obs .obs-flag{display:inline-flex}
+.obs-flag:hover{color:var(--secondary-container)}
+.check-item.has-obs .obs-flag{color:var(--secondary-container)}
 
 /* ===== DOIS CHECKLISTS LADO A LADO (mesma altura) ===== */
 .checklists-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:stretch}
@@ -276,7 +285,6 @@ body{
   transition:max-height .25s ease;
 }
 
-/* Ativado via JS quando ultrapassa o limite de itens */
 .checklist-items.is-scrollable{
   max-height:440px;overflow-y:auto;padding-right:6px;scrollbar-gutter:stable;
   scrollbar-width:thin;scrollbar-color:var(--outline-variant) transparent;
@@ -290,7 +298,6 @@ body{
   border:2px solid transparent;background-clip:padding-box}
 .checklist-items.is-scrollable::-webkit-scrollbar-thumb:hover{background:var(--outline)}
 
-/* Acessibilidade: foco visível ao navegar por teclado */
 .checklist-items .check-item:focus-within{
   outline:2px solid var(--secondary-container);outline-offset:2px;border-radius:var(--r-lg)}
 
@@ -323,7 +330,6 @@ body{
 .cal-box{background:var(--surface-lowest);border-radius:var(--r-lg);width:100%;max-width:1080px;
   max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-2)}
 
-/* Cabeçalho */
 .cal-header{background:var(--primary);color:#fff;padding:20px 24px;border-bottom:4px solid var(--secondary-container)}
 .cal-title-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .cal-title-row .material-symbols-outlined{color:var(--secondary-container)}
@@ -337,17 +343,14 @@ body{
 .cal-nav-btn:hover{background:var(--primary-container)}
 .cal-month{font-size:16px;font-weight:700;min-width:140px;text-align:center}
 
-/* Corpo */
 .cal-body{display:grid;grid-template-columns:1fr 320px;flex:1;overflow:hidden}
 .cal-grid-wrap{padding:20px;overflow-y:auto}
 .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
 .cal-weekdays span{text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;
   letter-spacing:.05em;color:var(--on-surface-variant)}
 
-/* 🔧 CORRIGIDO: altura fixa por linha em vez de aspect-ratio */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:90px;gap:6px}
 
-/* Dia */
 .cal-day{min-height:90px;border:1px solid var(--outline-variant);border-radius:var(--r);
   padding:8px;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:.2s;
   background:var(--surface-lowest);position:relative}
@@ -358,18 +361,15 @@ body{
 .cal-day.selected{background:var(--primary-container);border-color:var(--primary-container)}
 .cal-day.selected .cal-day-num{color:#fff}
 
-/* Estados especiais */
 .cal-day.weekend{background:var(--surface);cursor:not-allowed;opacity:.6}
 .cal-day.holiday{background:var(--error-container);cursor:not-allowed}
 .cal-day.holiday .cal-day-num{color:var(--error)}
 .cal-day-tag{font-size:9px;font-weight:700;color:var(--error);text-transform:uppercase;line-height:1}
 
-/* Indicador de aulas (bolinhas) */
 .cal-day-dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:auto}
 .cal-day-dots i{width:6px;height:6px;border-radius:50%;background:var(--secondary-container)}
 .cal-day.selected .cal-day-dots i{background:#fff}
 
-/* Legenda */
 .cal-legend{
   display:flex;
   gap:16px;
@@ -385,7 +385,6 @@ body{
 .dot-holiday{background:var(--error)}
 .dot-weekend{background:var(--outline)}
 
-/* Painel lateral */
 .cal-day-panel{border-left:1px solid var(--outline-variant);background:var(--surface-low);
   padding:20px;overflow-y:auto}
 .cal-panel-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -396,7 +395,6 @@ body{
 .cal-sub{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
   color:var(--on-surface-variant);margin:16px 0 8px}
 
-/* Chips de ficha */
 .cal-fiche{background:var(--surface-lowest);border:1px solid var(--outline-variant);
   border-radius:var(--r);padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .cal-fiche-info{flex:1;min-width:0}
@@ -409,13 +407,13 @@ body{
 .cal-fiche-btn.remove{color:var(--error)}
 .cal-empty-text{font-size:13px;color:var(--on-surface-variant);font-style:italic}
 
-/* Responsivo */
 @media(max-width:768px){
   .cal-body{grid-template-columns:1fr}
   .cal-day-panel{border-left:none;border-top:1px solid var(--outline-variant)}
   .cal-grid{grid-auto-rows:64px}
   .cal-day{min-height:64px;padding:4px}
 }
+
 /* ===== SELETOR DE TURMA + BADGE (RF06) ===== */
 #turma-select{
   width:100%;appearance:none;background:#fff;color:var(--primary);
@@ -430,7 +428,6 @@ body{
   font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
   padding:5px 12px;border-radius:var(--r-full)}
 
-/* Item insuficiente / em falta no estoque da turma */
 .check-item.estoque-baixo{border-color:var(--secondary-container);background:var(--secondary-fixed)}
 .check-item.estoque-falta{border-color:var(--error);background:var(--error-container)}
 .estoque-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
@@ -493,6 +490,7 @@ body{
   .cal-kitchen-filter{margin-left:0;flex:1 1 100%}
   #cal-kitchen{width:100%;max-width:none}
 }
+
 /* ===== BLOQUEIO HARD DE FICHA (RF02) ===== */
 .cal-fiche.is-blocked{
   background:var(--error-container);
