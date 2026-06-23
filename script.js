@@ -236,9 +236,8 @@ function renderPainel(p) {
     const obs = observacoes[obsKey(p.tipo, it.id)];
     
     let tagHtml = `<span class="estoque-tag ${s.st}">${s.label}</span>`;
-    let disabledAttr = `disabled`;
+    let disabledAttr = ''; 
     
-    // Suporte para visualização de Item Pendente
     if (it.pendente) {
       tagHtml = `<span class="estoque-tag baixo" style="background:#fff3cd; color:#856404; border-color:#ffeeba;">Pendente Aprovação</span>`;
       disabledAttr = `disabled`; 
@@ -248,7 +247,7 @@ function renderPainel(p) {
     
     return `
       <label class="check-item ${obs ? 'has-obs' : ''} ${clsEstoque}">
-        <input type="checkbox" data-id="${it.id}" ${s.ok && !it.pendente ? 'checked' : ''} ${disabledAttr}>
+        <input type="checkbox" data-id="${it.id}" ${disabledAttr}>
         <span class="check-box"><span class="material-symbols-outlined">check</span></span>
         <span class="check-label" data-obs="${it.id}">${it.nome}</span>
         <span class="obs-flag" title="${obs || ''}"><span class="material-symbols-outlined">sticky_note_2</span></span>
@@ -277,10 +276,9 @@ function configurarPainel(p, btnResetId) {
 
   if(btnResetId && $(btnResetId)) {
     $(btnResetId).addEventListener('click', () => {
-      const e = estoquePorTurma[turmaAtual];
-      const bucket = p.tipo === 'util' ? e.utensilios : e.insumos;
-      p.getItens().forEach(i => bucket[i.id] = 0);
-      renderPainel(p);
+      // CORREÇÃO: Limpa apenas visualmente
+      const checkboxes = p.lista.querySelectorAll('input[type="checkbox"]:not(:disabled)');
+      checkboxes.forEach(cb => cb.checked = false);
     });
   }
 }
@@ -304,7 +302,6 @@ if($('btn-add-insumo')) {
 }
 
 function fecharModalExtra() { extraModal.classList.remove('show'); }
-
 $('extra-close').addEventListener('click', fecharModalExtra);
 $('extra-cancel').addEventListener('click', fecharModalExtra);
 extraModal.addEventListener('click', e => { if (e.target === extraModal) fecharModalExtra(); });
@@ -322,14 +319,10 @@ $('extra-save').addEventListener('click', () => {
   
   const e = estoquePorTurma[turmaAtual];
   e.insumos[id] = 0; 
-  
-  // Se o usuário digitou uma observação, salva e vincula
   if (obs) observacoes[obsKey('insumo', id)] = obs;
 
   renderPainel(painels.main);
   fecharModalExtra();
-  
-  // Atualiza as notificações globais para gerar o sininho
   if (window.atualizarNotificacoes) window.atualizarNotificacoes();
   
   alert(`A solicitação urgente para "${nome}" foi enviada para o Desktop de Gestão de Estoque.`);
@@ -350,7 +343,6 @@ if($('btn-add-util')) {
 }
 
 function fecharModalUtil() { utilModal.classList.remove('show'); }
-
 $('util-close').addEventListener('click', fecharModalUtil);
 $('util-cancel').addEventListener('click', fecharModalUtil);
 utilModal.addEventListener('click', e => { if (e.target === utilModal) fecharModalUtil(); });
@@ -364,22 +356,156 @@ $('util-save').addEventListener('click', () => {
   const id = 'item_util_' + Date.now();
 
   (utensiliosFicha[receitaAtual] = utensiliosFicha[receitaAtual] || []);
-  
-  // Adiciona a flag pendente: true para bloquear o checklist e solicitar aprovação
   painels.util.getItens().push({ id, nome, necessario, unidade: 'un', pendente: true });
 
   const e = estoquePorTurma[turmaAtual];
   e.utensilios[id] = 0;
-
   if (obs) observacoes[obsKey('util', id)] = obs;
 
   renderPainel(painels.util);
   fecharModalUtil();
-  
-  // Atualiza as notificações globais para gerar o sininho
   if (window.atualizarNotificacoes) window.atualizarNotificacoes();
   
   alert(`A solicitação de empréstimo para o utensílio "${nome}" foi enviada para o Desktop de Gestão de Estoque.`);
+});
+
+
+// ===== CONCLUSÃO DE AULA E RELATO GERAL (RF10) =====
+const finishModal = $('finish-modal');
+
+// MUDANÇA AQUI: Usa uma classe exclusiva "btn-finish-class" para evitar ativar no botão de Nova Ficha
+const btnsFinishClass = document.querySelectorAll('.btn-finish-class');
+
+btnsFinishClass.forEach(btn => {
+  btn.addEventListener('click', () => {
+    $('finish-obs').value = '';
+    finishModal.classList.add('show');
+    $('finish-obs').focus();
+  });
+});
+
+function fecharModalFinish() { finishModal.classList.remove('show'); }
+$('finish-close').addEventListener('click', fecharModalFinish);
+$('finish-cancel').addEventListener('click', fecharModalFinish);
+finishModal.addEventListener('click', e => { if (e.target === finishModal) fecharModalFinish(); });
+
+$('finish-save').addEventListener('click', () => {
+  const obsGeral = $('finish-obs').value.trim();
+  if (obsGeral) {
+     observacoes[`${turmaAtual}|${receitaAtual}|relato_geral`] = obsGeral;
+  }
+
+  const cards = document.querySelectorAll('.class-card');
+  cards.forEach(card => {
+    if (card.dataset.recipe === receitaAtual && card.dataset.turma === turmaAtual) {
+      card.classList.remove('running', 'flight-accent');
+      card.classList.add('done');
+      
+      const divider = card.querySelector('.divider.sec');
+      if (divider) divider.classList.remove('sec');
+      
+      const timeMain = card.querySelector('.t-main.c-secondary');
+      if (timeMain) timeMain.classList.remove('c-secondary');
+
+      const statusSpan = card.querySelector('.status');
+      if (statusSpan) {
+        statusSpan.className = 'status status-done';
+        statusSpan.innerHTML = '<span class="material-symbols-outlined sm">check_circle</span>Concluída';
+      }
+    }
+  });
+
+  fecharModalFinish();
+  alert('Materiais separados e aula finalizada com sucesso!\nO relato foi salvo no histórico e o status atualizado.');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+
+// ===== REAPROVEITAMENTO DE SOBRAS (RF07) =====
+const sobrasModal = $('sobras-modal');
+
+if ($('btn-sobras')) {
+  $('btn-sobras').addEventListener('click', () => {
+    $('sobras-name').value = '';
+    const listaSobras = $('sobras-list');
+    
+    const itensAtuais = painels.main.getItens();
+    
+    if (itensAtuais.length === 0) {
+      return alert("Não há itens nesta receita para gerar sobras.");
+    }
+
+    listaSobras.innerHTML = itensAtuais.map(it => `
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
+          <input type="checkbox" class="sobra-check" data-id="${it.id}" data-nome="${it.nome}" data-un="${it.unidade}">
+          <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${it.nome}</span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="number" id="sobra-qtd-${it.id}" class="obs-textarea" style="width: 80px; min-height: 30px; height: 30px; padding: 4px 8px; margin: 0;" placeholder="0" disabled>
+          <span style="font-size: 12px; color: #64748b; width: 20px; text-align: left;">${it.unidade}</span>
+        </div>
+      </div>
+    `).join('');
+
+    listaSobras.querySelectorAll('.sobra-check').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const inputQtd = $(`sobra-qtd-${e.target.dataset.id}`);
+        inputQtd.disabled = !e.target.checked;
+        if (e.target.checked) inputQtd.focus();
+        else inputQtd.value = '';
+      });
+    });
+
+    sobrasModal.classList.add('show');
+  });
+}
+
+function fecharModalSobras() { sobrasModal.classList.remove('show'); }
+$('sobras-close').addEventListener('click', fecharModalSobras);
+$('sobras-cancel').addEventListener('click', fecharModalSobras);
+sobrasModal.addEventListener('click', e => { if (e.target === sobrasModal) fecharModalSobras(); });
+
+$('sobras-save').addEventListener('click', () => {
+  const nomeNovaFicha = $('sobras-name').value.trim();
+  if (!nomeNovaFicha) return alert("Por favor, digite um nome para a nova ficha.");
+
+  const checksMarcados = document.querySelectorAll('.sobra-check:checked');
+  if (checksMarcados.length === 0) return alert("Selecione pelo menos um insumo que sobrou.");
+
+  const novosItens = [];
+  let erroQuantidade = false;
+
+  checksMarcados.forEach(cb => {
+    const id = cb.dataset.id;
+    const nome = cb.dataset.nome;
+    const un = cb.dataset.un;
+    const qtdDigitada = parseFloat($(`sobra-qtd-${id}`).value);
+
+    if (isNaN(qtdDigitada) || qtdDigitada <= 0) {
+      erroQuantidade = true;
+    } else {
+      novosItens.push({ id, nome, necessario: qtdDigitada, unidade: un });
+    }
+  });
+
+  if (erroQuantidade) {
+    return alert("Por favor, informe uma quantidade válida (maior que zero) para todos os itens selecionados.");
+  }
+
+  const novaId = 'criativa_' + Date.now();
+  receitas[novaId] = {
+    nome: `🌟 Criativa: ${nomeNovaFicha}`,
+    local: `Sobras • ${turmas[turmaAtual].cozinha}`,
+    itens: novosItens
+  };
+
+  receitasPorTurma[turmaAtual].push(novaId);
+  popularReceitasDaTurma(turmaAtual);
+  trocarReceita(novaId);
+
+  fecharModalSobras();
+  alert(`Aula criativa criada com sucesso!\nForam reaproveitados ${novosItens.length} itens com as quantidades ajustadas.`);
 });
 
 
@@ -460,7 +586,7 @@ document.querySelectorAll('button').forEach(el => {
   el.addEventListener('mouseleave', () => el.style.transform = 'scale(1)');
 });
 
-// Modal de observação
+// Modal de observação (ao clicar nos itens)
 const obsModal = $('obs-modal');
 const obsName  = $('obs-item-name');
 const obsText  = $('obs-text');
@@ -525,6 +651,7 @@ highlightCard(receitaAtual);
     "Cozinha Pedagógica 04": "lab04"
   };
 
+  // Aqui é onde os cards da aula criativa também aparecerão quando criados!
   const fichasDisponiveis = [
     { id: 'confeitaria_bolo',     nome: 'Confeitaria: Bolo de Cenoura', turma: '2024.1.C' },
     { id: 'confeitaria_torta',    nome: 'Confeitaria: Torta de Maçã',   turma: '2024.1.C' },
@@ -533,6 +660,18 @@ highlightCard(receitaAtual);
     { id: 'asia_yakisoba',        nome: 'Ásia: Yakisoba & Tempurá',     turma: '2024.2.N' },
     { id: 'asia_sushi',           nome: 'Ásia: Sushi & Sashimi',        turma: '2024.2.N' }
   ];
+
+  // Adiciona suporte no calendário para encontrar as receitas criadas no runtime
+  function getFichaCompleta(id) {
+    let f = fichasDisponiveis.find(x => x.id === id);
+    if (!f && receitas[id]) {
+       // Se foi criada via "Sobras"
+       let turmaDaSobras = Object.keys(receitasPorTurma).find(k => receitasPorTurma[k].includes(id));
+       f = { id: id, nome: receitas[id].nome, turma: turmaDaSobras };
+       fichasDisponiveis.push(f);
+    }
+    return f;
+  }
 
   const alocacoes = JSON.parse(localStorage.getItem('sigec-alocacoes') || '{}');
   function salvar() { localStorage.setItem('sigec-alocacoes', JSON.stringify(alocacoes)); }
@@ -563,6 +702,7 @@ highlightCard(receitaAtual);
     const e = estoquePorTurma[ficha.turma];
     if (!e) return { classe: 'stock-out', txt: 'Turma sem estoque' };
     const total = r.itens.length;
+    if (total === 0) return { classe: 'stock-ok', txt: 'Estoque OK' }; // Para sobras sem itens
     let ok = 0, algum = 0;
     r.itens.forEach(it => {
       const disp = e.insumos?.[it.id] ?? 0;
@@ -602,10 +742,7 @@ highlightCard(receitaAtual);
       if (fimDeSemana) cls += ' weekend';
       if (feriado) cls += ' holiday';
 
-      const aulas = (alocacoes[k] || []).filter(id => {
-        const f = fichasDisponiveis.find(x => x.id === id);
-        return fichaPassaFiltro(f);
-      });
+      const aulas = (alocacoes[k] || []).filter(id => fichaPassaFiltro(getFichaCompleta(id)));
       const dots = aulas.map(() => '<i></i>').join('');
 
       html += `
@@ -627,14 +764,11 @@ highlightCard(receitaAtual);
     document.getElementById('cal-panel-date').textContent =
       data.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
 
-    const aulas = (alocacoes[k] || []).filter(id => {
-      const f = fichasDisponiveis.find(x => x.id === id);
-      return fichaPassaFiltro(f);
-    });
+    const aulas = (alocacoes[k] || []).filter(id => fichaPassaFiltro(getFichaCompleta(id)));
 
     const elAloc = document.getElementById('cal-allocated');
     elAloc.innerHTML = aulas.length ? aulas.map(id => {
-      const f = fichasDisponiveis.find(x => x.id === id);
+      const f = getFichaCompleta(id);
       const st = statusEstoque(f || { id });
       return `
         <div class="cal-fiche">
@@ -652,9 +786,14 @@ highlightCard(receitaAtual);
 
     const elDisp = document.getElementById('cal-available');
     const alocadasDoDia = alocacoes[k] || [];
+    
+    // Atualiza lista de disponíveis pegando as que foram criadas em runtime
+    Object.keys(receitas).forEach(idKey => getFichaCompleta(idKey));
+    
     const livres = fichasDisponiveis.filter(f =>
       fichaPassaFiltro(f) && !alocadasDoDia.includes(f.id)
     );
+    
     elDisp.innerHTML = livres.length ? livres.map(f => {
       const st = statusEstoque(f);
       const bloqueada = fichaBloqueada(f);
@@ -703,7 +842,7 @@ highlightCard(receitaAtual);
 
     if (addBtn) {
       const id = addBtn.dataset.add;
-      const f = fichasDisponiveis.find(x => x.id === id);
+      const f = getFichaCompleta(id);
 
       if (!f || fichaBloqueada(f)) {
         alert(`🚫 Alocação bloqueada.\nReponha o estoque antes de agendar.`);
@@ -714,7 +853,7 @@ highlightCard(receitaAtual);
       const cozinhaDaFichaAtual = turmas[f.turma].cozinha;
       
       const conflito = alocacoesNoDia.some(idAlocado => {
-        const fichaAlocada = fichasDisponiveis.find(x => x.id === idAlocado);
+        const fichaAlocada = getFichaCompleta(idAlocado);
         if (fichaAlocada) {
           const cozinhaAlocada = turmas[fichaAlocada.turma].cozinha;
           return cozinhaAlocada === cozinhaDaFichaAtual;
@@ -768,7 +907,7 @@ highlightCard(receitaAtual);
   });
 })();
 
-// ===== NOTIFICAÇÕES (AGORA COM ITENS PENDENTES) =====
+// ===== NOTIFICAÇÕES =====
 (function () {
   const btn    = document.getElementById('notif-btn');
   const panel  = document.getElementById('notif-panel');
@@ -796,10 +935,8 @@ highlightCard(receitaAtual);
       const est = estoquePorTurma[turmaId];
       if (!est) return;
 
-      // 1. Notifica sobre Insumos Pendentes e em Falta
       receita.itens.forEach(item => {
         const id = `${turmaId}-${fichaId}-insumo-${item.id}`;
-        
         if (item.pendente) {
           notifs.push({
             id, tipo: 'info',
@@ -824,7 +961,6 @@ highlightCard(receitaAtual);
         }
       });
 
-      // 2. Notifica sobre Utensílios Pendentes
       const utensilios = utensiliosFicha[fichaId] || [];
       utensilios.forEach(item => {
         const id = `${turmaId}-${fichaId}-util-${item.id}`;
@@ -864,7 +1000,6 @@ highlightCard(receitaAtual);
       </div>`).join('');
   }
   
-  // Expõe a função globalmente para podermos chamá-la ao criar um item extra
   window.atualizarNotificacoes = render;
 
   function marcarTodasLidas() {

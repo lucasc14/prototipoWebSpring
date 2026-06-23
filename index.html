@@ -131,6 +131,7 @@
 
     <div class="checklists-grid">
 
+      <!-- CHECKLIST ÚNICO DE INSUMOS -->
       <section class="checklist-card">
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
@@ -167,16 +168,20 @@
           
           <div class="add-row">
             <button class="btn-add" id="btn-add-insumo">
-              <span class="material-symbols-outlined">add</span>Solicitar insumo extra urgente
+              <span class="material-symbols-outlined">add</span>Solicitar insumo extra
             </button>
           </div>
+          
+          <!-- FOOTER DE INSUMOS (Com a nova ficha no meio) -->
           <div class="checklist-footer">
-            <button id="main-btn-reset" class="btn-ghost">Limpar Marcações</button>
-            <button class="btn-confirm">Confirmar Separação para Aula</button>
+            <button id="main-btn-reset" class="btn-ghost">Limpar</button>
+            <button id="btn-sobras" class="btn-confirm">Criar Nova Ficha</button>
+            <button class="btn-confirm btn-finish-class">Confirmar Separação</button>
           </div>
         </div>
       </section>
 
+      <!-- CHECKLIST DE UTENSÍLIOS -->
       <section class="checklist-card">
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
@@ -204,9 +209,10 @@
           </button>
         </div>
 
-        <div class="checklist-footer">
-          <button id="util-btn-reset" class="btn-ghost">Limpar</button>
-          <button class="btn-confirm">Confirmar Utensílios</button>
+        <!-- FOOTER DE UTENSÍLIOS (Alinhado à esquerda e sem esticar) -->
+        <div class="checklist-footer" style="justify-content: flex-start;">
+          <button id="util-btn-reset" class="btn-ghost" style="flex: none; padding: 11px 24px;">Limpar</button>
+          <button class="btn-confirm btn-finish-class" style="flex: none; padding: 11px 24px;">Confirmar Utensílios</button>
         </div>
       </section>
 
@@ -215,6 +221,7 @@
   </div>
 </main>
 
+<!-- MODAL DO CALENDÁRIO -->
 <div class="cal-modal" id="cal-modal">
   <div class="cal-box">
     <div class="cal-header flight-accent">
@@ -270,6 +277,7 @@
   </div>
 </div>
 
+<!-- MODAL DE OBSERVAÇÃO AO CLICAR NOS ITENS -->
 <div class="modal-overlay" id="obs-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
@@ -286,6 +294,7 @@
   </div>
 </div>
 
+<!-- MODAL DE SOLICITAÇÃO DE INSUMO EXTRA -->
 <div class="modal-overlay" id="extra-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
@@ -312,12 +321,13 @@
     <textarea id="extra-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Faltou para finalizar o prato..."></textarea>
 
     <div class="modal-footer">
-      <button class="btn-ghost" id="extra-cancel">Cancelar</button>
-      <button class="btn-confirm" id="extra-save">Adicionar ao Checklist</button>
+      <button class="btn-ghost" style="flex: 1;" id="extra-cancel">Cancelar</button>
+      <button class="btn-confirm" style="flex: 1;" id="extra-save">Adicionar ao Checklist</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL DE ADIÇÃO DE UTENSÍLIO EXTRA -->
 <div class="modal-overlay" id="util-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
@@ -336,8 +346,51 @@
     <textarea id="util-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Precisamos de mais um para agilizar as equipes..."></textarea>
 
     <div class="modal-footer">
-      <button class="btn-ghost" id="util-cancel">Cancelar</button>
-      <button class="btn-confirm" id="util-save">Adicionar Utensílio</button>
+      <button class="btn-ghost" style="flex: 1;" id="util-cancel">Cancelar</button>
+      <button class="btn-confirm" style="flex: 1;" id="util-save">Adicionar Utensílio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE CONCLUSÃO DE AULA (RF10) -->
+<div class="modal-overlay" id="finish-modal">
+  <div class="modal flight-accent">
+    <div class="modal-head">
+      <h3 class="modal-title">Concluir Aula</h3>
+      <button class="modal-close" id="finish-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Registre uma observação geral sobre o andamento da aula, incidentes ou desvios de cardápio.</p>
+    
+    <label class="field-label dark" for="finish-obs">Relato da Aula (Opcional)</label>
+    <textarea id="finish-obs" class="obs-textarea" style="min-height: 100px; margin-bottom: 16px;" placeholder="Ex: A turma estava muito agitada hoje, não deu tempo de empratar. O forno 2 está descalibrado..."></textarea>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" style="flex: 1;" id="finish-cancel">Cancelar</button>
+      <button class="btn-confirm" style="flex: 1;" id="finish-save">Salvar e Finalizar Aula</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE REAPROVEITAMENTO DE SOBRAS (AULA CRIATIVA) -->
+<div class="modal-overlay" id="sobras-modal">
+  <div class="modal flight-accent">
+    <div class="modal-head">
+      <h3 class="modal-title">Nova Receita com Sobras</h3>
+      <button class="modal-close" id="sobras-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Selecione os insumos que sobraram e informe a quantidade exata que será utilizada na nova receita.</p>
+    
+    <label class="field-label dark">Nome da Nova Ficha / Preparo</label>
+    <input type="text" id="sobras-name" class="obs-textarea" style="min-height: 40px; margin-bottom: 16px;" placeholder="Ex: Pavlova de Frutas (Sobras)">
+    
+    <label class="field-label dark">Insumos da Receita Atual</label>
+    <div id="sobras-list" style="max-height: 250px; overflow-y: auto; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #eee;">
+      <!-- Lista injetada pelo JS -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" style="flex: 1;" id="sobras-cancel">Cancelar</button>
+      <button class="btn-confirm" style="flex: 1;" id="sobras-save">Criar Nova Ficha</button>
     </div>
   </div>
 </div>
