@@ -3,18 +3,26 @@ const LIMITE_SCROLL = 10;
 
 // ===== ENTIDADES SEPARADAS =====
 
-// Turmas / laboratórios independentes
 const turmas = {
   "2024.1.A": { nome: "Turma 2024.1.A", cozinha: "Padaria Lab 01" },
   "2024.1.C": { nome: "Turma 2024.1.C", cozinha: "Cozinha Pedagógica 02" },
   "2024.2.N": { nome: "Turma 2024.2.N", cozinha: "Cozinha Pedagógica 04" }
 };
 
-// RECEITAS
+// RECEITAS ENRIQUECIDAS COM DESCRIÇÃO E MODO DE PREPARO
 const receitas = {
   confeitaria_bolo: {
     nome: "Bolo de Cenoura com Cobertura",
     local: "08:00 • Cozinha Pedagógica 02",
+    descricao: "Massa fofa de cenoura com cobertura clássica de chocolate em pó 50%, focada em técnicas de emulsão.",
+    tempoPreparo: "45 min",
+    modoPreparo: [
+      "Pré-aqueça o forno a 180°C e unte as 6 formas.",
+      "No liquidificador, bata as cenouras, os ovos e o óleo até obter um creme liso.",
+      "Em uma tigela inox, misture a farinha e o açúcar. Despeje o creme de cenoura e incorpore com a espátula.",
+      "Adicione o fermento e misture delicadamente. Distribua nas formas e asse por 35 minutos.",
+      "Para a cobertura: misture o chocolate, açúcar e manteiga e leve ao fogo até desgrudar do fundo."
+    ],
     itens: [
       { id: "cenoura", nome: "Cenoura Fresca",      necessario: 500,  unidade: "g" },
       { id: "farinha", nome: "Farinha de Trigo",    necessario: 2000, unidade: "g" },
@@ -27,6 +35,15 @@ const receitas = {
   confeitaria_torta: {
     nome: "Torta de Maçã Caramelada",
     local: "10:00 • Cozinha Pedagógica 02",
+    descricao: "Clássica torta doce com massa brisée e recheio de maçãs caramelizadas, com foco em ponto de massa quebradiça.",
+    tempoPreparo: "1h 30min",
+    modoPreparo: [
+      "Prepare a massa brisée misturando farinha e manteiga gelada com as pontas dos dedos.",
+      "Adicione água gelada aos poucos até dar ponto. Leve à geladeira por 30 minutos.",
+      "Descasque e corte as maçãs. Caramelize o açúcar e cozinhe as maçãs brevemente.",
+      "Abra a massa e forre as formas. Adicione o recheio já frio.",
+      "Asse a 180°C até a massa dourar e o recheio borbulhar."
+    ],
     itens: [
       { id: "farinha",  nome: "Farinha de Trigo", necessario: 1500, unidade: "g" },
       { id: "manteiga", nome: "Manteiga",         necessario: 500,  unidade: "g" },
@@ -38,6 +55,15 @@ const receitas = {
   panificacao_pao: {
     nome: "Pão Francês & Baguete",
     local: "13:30 • Padaria Lab 01",
+    descricao: "Clássico pão de casca crocante e miolo super macio. Foco em sova, fermentação e corte (pestana).",
+    tempoPreparo: "3h 30min",
+    modoPreparo: [
+      "Misture a farinha tipo 1, o sal e o melhorador na masseira.",
+      "Adicione 80% da água gelada e inicie a mistura na velocidade baixa (1ª marcha).",
+      "Quando a massa homogeneizar, adicione o fermento fresco e o restante da água. Passe para a 2ª marcha até o ponto de véu.",
+      "Divida a massa, boleie e deixe descansar nas cestas de fermentação.",
+      "Faça os cortes (grigne) com a lâmina e asse em forno de lastro a 200°C com vapor inicial."
+    ],
     itens: [
       { id: "farinha_t1", nome: "Farinha de Trigo Tipo 1",   necessario: 5000, unidade: "g" },
       { id: "fermento",   nome: "Fermento Biológico Fresco", necessario: 250,  unidade: "g" },
@@ -50,6 +76,15 @@ const receitas = {
   panificacao_brioche: {
     nome: "Brioche Amanteigado",
     local: "15:30 • Padaria Lab 01",
+    descricao: "Pão francês de luxo, altamente enriquecido com manteiga e ovos, resultando em um miolo amarelo e desfiável.",
+    tempoPreparo: "4h",
+    modoPreparo: [
+      "Na masseira, coloque a farinha, o fermento e o açúcar.",
+      "Adicione os ovos aos poucos na velocidade baixa até formar uma massa consistente.",
+      "Quando atingir 50% de desenvolvimento do glúten, adicione a manteiga gelada em cubos pequenos progressivamente.",
+      "Bata até o ponto de véu perfeito e brilhante.",
+      "Deixe fermentar, modele nas formas específicas e asse a 180°C."
+    ],
     itens: [
       { id: "farinha_t1", nome: "Farinha de Trigo Tipo 1",   necessario: 2000, unidade: "g" },
       { id: "fermento",   nome: "Fermento Biológico Fresco", necessario: 100,  unidade: "g" },
@@ -61,6 +96,15 @@ const receitas = {
   asia_yakisoba: {
     nome: "Yakisoba & Tempurá de Legumes",
     local: "19:00 • Cozinha Pedagógica 04",
+    descricao: "Preparo tradicional asiático que combina a técnica do stir-fry no wok para o yakisoba e a fritura de imersão leve para o tempurá.",
+    tempoPreparo: "40 min",
+    modoPreparo: [
+      "Prepare a massa do tempurá com água extremamente gelada e mantenha sob refrigeração.",
+      "Corte os legumes para o tempurá e para o yakisoba.",
+      "Aqueça bem o wok, adicione óleo e sele as carnes (se houver). Reserve.",
+      "No mesmo wok, refogue os legumes firmes, adicione o macarrão pré-cozido e o molho shoyu. Finalize com óleo de gergelim.",
+      "Mergulhe os legumes do tempurá na massa e frite em óleo quente até a casca ficar crocante e clara."
+    ],
     itens: [
       { id: "macarrao", nome: "Macarrão para Yakisoba", necessario: 2000, unidade: "g" },
       { id: "shoyu",    nome: "Molho Shoyu",            necessario: 1000, unidade: "ml" },
@@ -73,6 +117,15 @@ const receitas = {
   asia_sushi: {
     nome: "Sushi & Sashimi Tradicional",
     local: "20:30 • Cozinha Pedagógica 04",
+    descricao: "Técnicas de corte de peixes para sashimi e preparo do shari (arroz de sushi) temperado com su para montagem de makis.",
+    tempoPreparo: "2h",
+    modoPreparo: [
+      "Lave o arroz repetidas vezes até a água sair cristalina. Cozinhe com a proporção exata de água.",
+      "Misture o vinagre, açúcar e sal para fazer o 'su'. Tempere o arroz quente e resfrie rapidamente.",
+      "Prepare os cortes de salmão utilizando a faca yanagiba (cortes limpos, sem serrar).",
+      "Posicione a alga nori sobre a esteira, espalhe o arroz, recheie e enrole com firmeza.",
+      "Corte os rolos e sirva imediatamente com shoyu e gengibre em conserva."
+    ],
     itens: [
       { id: "arroz",    nome: "Arroz para Sushi", necessario: 1500, unidade: "g" },
       { id: "shoyu",    nome: "Molho Shoyu",      necessario: 500,  unidade: "ml" },
@@ -89,7 +142,6 @@ const receitasPorTurma = {
   "2024.2.N": ["asia_yakisoba", "asia_sushi"]
 };
 
-// Utensílios por ficha
 const utensiliosFicha = {
   confeitaria_bolo: [
     { id: "batedeira", nome: "Batedeira Planetária", necessario: 1, unidade: "un" },
@@ -126,7 +178,6 @@ const utensiliosFicha = {
   ]
 };
 
-// Estoque Isolado por Turma
 const estoquePorTurma = {
   "2024.1.A": {
     insumos: { farinha_t1: 8000, fermento: 400, sal: 200, melhorador: 80, agua: 6000, assadeiras: 6, manteiga_p: 1000, ovos_p: 24, acucar_p: 600 },
@@ -143,7 +194,6 @@ const estoquePorTurma = {
 };
 
 const observacoes = {};
-
 let receitaAtual;
 let turmaAtual;
 
@@ -164,7 +214,6 @@ function statusItem(tipo, item) {
 
 function obsKey(tipo, id) { return `${turmaAtual}|${receitaAtual}|${tipo}|${id}`; }
 
-// ===== Configuração Unificada dos Painéis =====
 const painels = {
   main: {
     tipo: 'insumo',
@@ -267,7 +316,6 @@ function renderTudo() {
 }
 
 function configurarPainel(p, btnResetId) {
-  // Abre observação SOMENTE ao clicar no ícone de nota (libera o clique do checkbox)
   p.lista.addEventListener('click', e => {
     const flag = e.target.closest('.obs-flag');
     if (flag) {
@@ -276,11 +324,8 @@ function configurarPainel(p, btnResetId) {
     }
   });
 
-  // Recalcula o progresso toda vez que um checkbox muda de estado
   p.lista.addEventListener('change', e => {
-    if (e.target.type === 'checkbox') {
-      updateProgress(p);
-    }
+    if (e.target.type === 'checkbox') updateProgress(p);
   });
 
   if (btnResetId && $(btnResetId)) {
@@ -292,25 +337,95 @@ function configurarPainel(p, btnResetId) {
   }
 }
 
-// Inicializa os listeners dos dois painéis
 configurarPainel(painels.main, 'main-btn-reset');
 configurarPainel(painels.util, 'util-btn-reset');
+// ===== RESUMO E MODO COZINHA =====
+const summaryName = $('summary-recipe-name');
+const summarySteps = $('summary-steps');
+const summaryFooter = $('summary-footer'); // Div que engloba o botão e tempo
+const summaryTime = $('summary-time');
+const summaryCard = $('recipe-summary-card');
 
+const kitchenModal = $('kitchen-modal');
+const kitchenTitle = $('kitchen-title');
+const kitchenSteps = $('kitchen-steps');
 
-// ===== MODAL DE INSUMO EXTRA =====
-const extraModal = $('extra-modal');
+// 1. Atualizar o Card Lateral ao trocar a receita
+function atualizarResumoReceita(key) {
+  const r = receitas[key];
+  if (!r) return;
 
-if($('btn-add-insumo')) {
-  $('btn-add-insumo').addEventListener('click', () => {
-    $('extra-name').value = '';
-    $('extra-qtd').value = '';
-    $('extra-un').value = '';
-    $('extra-obs').value = '';
-    extraModal.classList.add('show');
-    $('extra-name').focus();
+  if(summaryName) summaryName.textContent = r.nome;
+  
+  // Popula os passos numerados
+  if(summarySteps) {
+    if (r.modoPreparo && r.modoPreparo.length > 0) {
+      summarySteps.innerHTML = r.modoPreparo.map(passo => `<li>${passo}</li>`).join('');
+    } else {
+      summarySteps.innerHTML = `<li style="list-style: none;">Modo de preparo indisponível para esta ficha.</li>`;
+    }
+  }
+
+  // Mostra ou esconde o rodapé inteiro (botão e tempo) se houver dados
+  if(summaryFooter && summaryTime) {
+    if (r.tempoPreparo && r.modoPreparo && r.modoPreparo.length > 0) {
+      summaryTime.textContent = r.tempoPreparo;
+      summaryFooter.style.display = 'flex';
+    } else {
+      summaryFooter.style.display = 'none';
+    }
+  }
+}
+
+// 2. Abrir o Modal Gigante
+function abrirModoCozinha() {
+  const r = receitas[receitaAtual];
+  if (!r) return;
+
+  if(kitchenTitle) kitchenTitle.textContent =  r.nome;
+  
+  if(kitchenSteps) {
+    if (r.modoPreparo && r.modoPreparo.length > 0) {
+      kitchenSteps.innerHTML = r.modoPreparo.map(passo => `<li>${passo}</li>`).join('');
+    } else {
+      kitchenSteps.innerHTML = `<li>Modo de preparo indisponível.</li>`;
+    }
+  }
+  
+  if(kitchenModal) kitchenModal.classList.add('show');
+}
+
+// O botão abre o modo tela cheia
+const btnOpenKitchen = $('btn-open-kitchen');
+if(btnOpenKitchen) btnOpenKitchen.addEventListener('click', abrirModoCozinha);
+
+// 3. Fechar Modal Cozinha
+function fecharModalCozinha() { 
+  if(kitchenModal) kitchenModal.classList.remove('show'); 
+}
+
+const kitchenClose = $('kitchen-close');
+if(kitchenClose) {
+  kitchenClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fecharModalCozinha();
   });
 }
 
+if(kitchenModal) {
+  kitchenModal.addEventListener('click', e => { 
+    if (e.target === kitchenModal) fecharModalCozinha(); 
+  });
+}
+
+// ===== MODAIS EXTRAS E CONCLUSÃO DE AULA =====
+const extraModal = $('extra-modal');
+if($('btn-add-insumo')) {
+  $('btn-add-insumo').addEventListener('click', () => {
+    $('extra-name').value = ''; $('extra-qtd').value = ''; $('extra-un').value = ''; $('extra-obs').value = '';
+    extraModal.classList.add('show'); $('extra-name').focus();
+  });
+}
 function fecharModalExtra() { extraModal.classList.remove('show'); }
 $('extra-close').addEventListener('click', fecharModalExtra);
 $('extra-cancel').addEventListener('click', fecharModalExtra);
@@ -319,14 +434,12 @@ extraModal.addEventListener('click', e => { if (e.target === extraModal) fecharM
 $('extra-save').addEventListener('click', () => {
   const nome = $('extra-name').value.trim();
   if (!nome) return alert("Por favor, insira o nome do insumo.");
-
   const necessario = parseFloat($('extra-qtd').value) || 0;
   const unidade = $('extra-un').value.trim() || 'un';
   const obs = $('extra-obs').value.trim();
   const id = 'item_extra_' + Date.now();
 
   painels.main.getItens().push({ id, nome, necessario, unidade, pendente: true });
-
   const e = estoquePorTurma[turmaAtual];
   e.insumos[id] = 0;
   if (obs) observacoes[obsKey('insumo', id)] = obs;
@@ -334,24 +447,16 @@ $('extra-save').addEventListener('click', () => {
   renderPainel(painels.main);
   fecharModalExtra();
   if (window.atualizarNotificacoes) window.atualizarNotificacoes();
-
-  alert(`A solicitação urgente para "${nome}" foi enviada para o Desktop de Gestão de Estoque.`);
+  alert(`A solicitação urgente para "${nome}" foi enviada para o Desktop de Gestão.`);
 });
 
-
-// ===== MODAL DE UTENSÍLIO EXTRA =====
 const utilModal = $('util-modal');
-
 if($('btn-add-util')) {
   $('btn-add-util').addEventListener('click', () => {
-    $('util-name').value = '';
-    $('util-qtd').value = '';
-    $('util-obs').value = '';
-    utilModal.classList.add('show');
-    $('util-name').focus();
+    $('util-name').value = ''; $('util-qtd').value = ''; $('util-obs').value = '';
+    utilModal.classList.add('show'); $('util-name').focus();
   });
 }
-
 function fecharModalUtil() { utilModal.classList.remove('show'); }
 $('util-close').addEventListener('click', fecharModalUtil);
 $('util-cancel').addEventListener('click', fecharModalUtil);
@@ -360,14 +465,12 @@ utilModal.addEventListener('click', e => { if (e.target === utilModal) fecharMod
 $('util-save').addEventListener('click', () => {
   const nome = $('util-name').value.trim();
   if (!nome) return alert("Por favor, insira o nome do utensílio.");
-
   const necessario = parseFloat($('util-qtd').value) || 0;
   const obs = $('util-obs').value.trim();
   const id = 'item_util_' + Date.now();
 
   (utensiliosFicha[receitaAtual] = utensiliosFicha[receitaAtual] || []);
   painels.util.getItens().push({ id, nome, necessario, unidade: 'un', pendente: true });
-
   const e = estoquePorTurma[turmaAtual];
   e.utensilios[id] = 0;
   if (obs) observacoes[obsKey('util', id)] = obs;
@@ -375,24 +478,15 @@ $('util-save').addEventListener('click', () => {
   renderPainel(painels.util);
   fecharModalUtil();
   if (window.atualizarNotificacoes) window.atualizarNotificacoes();
-
-  alert(`A solicitação de empréstimo para o utensílio "${nome}" foi enviada para o Desktop de Gestão de Estoque.`);
+  alert(`A solicitação de empréstimo para o utensílio "${nome}" foi enviada.`);
 });
 
-
-// ===== CONCLUSÃO DE AULA E RELATO GERAL (RF10) =====
 const finishModal = $('finish-modal');
-
-const btnsFinishClass = document.querySelectorAll('.btn-finish-class');
-
-btnsFinishClass.forEach(btn => {
+document.querySelectorAll('.btn-finish-class').forEach(btn => {
   btn.addEventListener('click', () => {
-    $('finish-obs').value = '';
-    finishModal.classList.add('show');
-    $('finish-obs').focus();
+    $('finish-obs').value = ''; finishModal.classList.add('show'); $('finish-obs').focus();
   });
 });
-
 function fecharModalFinish() { finishModal.classList.remove('show'); }
 $('finish-close').addEventListener('click', fecharModalFinish);
 $('finish-cancel').addEventListener('click', fecharModalFinish);
@@ -400,22 +494,16 @@ finishModal.addEventListener('click', e => { if (e.target === finishModal) fecha
 
 $('finish-save').addEventListener('click', () => {
   const obsGeral = $('finish-obs').value.trim();
-  if (obsGeral) {
-     observacoes[`${turmaAtual}|${receitaAtual}|relato_geral`] = obsGeral;
-  }
+  if (obsGeral) observacoes[`${turmaAtual}|${receitaAtual}|relato_geral`] = obsGeral;
 
-  const cards = document.querySelectorAll('.class-card');
-  cards.forEach(card => {
+  document.querySelectorAll('.class-card').forEach(card => {
     if (card.dataset.recipe === receitaAtual && card.dataset.turma === turmaAtual) {
       card.classList.remove('running', 'flight-accent');
       card.classList.add('done');
-
       const divider = card.querySelector('.divider.sec');
       if (divider) divider.classList.remove('sec');
-
       const timeMain = card.querySelector('.t-main.c-secondary');
       if (timeMain) timeMain.classList.remove('c-secondary');
-
       const statusSpan = card.querySelector('.status');
       if (statusSpan) {
         statusSpan.className = 'status status-done';
@@ -425,96 +513,8 @@ $('finish-save').addEventListener('click', () => {
   });
 
   fecharModalFinish();
-  alert('Materiais separados e aula finalizada com sucesso!\nO relato foi salvo no histórico e o status atualizado.');
+  alert('Materiais separados e aula finalizada com sucesso!');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-
-// ===== REAPROVEITAMENTO DE SOBRAS (RF07) =====
-const sobrasModal = $('sobras-modal');
-
-if ($('btn-sobras')) {
-  $('btn-sobras').addEventListener('click', () => {
-    $('sobras-name').value = '';
-    const listaSobras = $('sobras-list');
-
-    const itensAtuais = painels.main.getItens();
-
-    if (itensAtuais.length === 0) {
-      return alert("Não há itens nesta receita para gerar sobras.");
-    }
-
-    listaSobras.innerHTML = itensAtuais.map(it => `
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
-          <input type="checkbox" class="sobra-check" data-id="${it.id}" data-nome="${it.nome}" data-un="${it.unidade}">
-          <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${it.nome}</span>
-        </label>
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <input type="number" id="sobra-qtd-${it.id}" class="obs-textarea" style="width: 80px; min-height: 30px; height: 30px; padding: 4px 8px; margin: 0;" placeholder="0" disabled>
-          <span style="font-size: 12px; color: #64748b; width: 20px; text-align: left;">${it.unidade}</span>
-        </div>
-      </div>
-    `).join('');
-
-    listaSobras.querySelectorAll('.sobra-check').forEach(cb => {
-      cb.addEventListener('change', (e) => {
-        const inputQtd = $(`sobra-qtd-${e.target.dataset.id}`);
-        inputQtd.disabled = !e.target.checked;
-        if (e.target.checked) inputQtd.focus();
-        else inputQtd.value = '';
-      });
-    });
-
-    sobrasModal.classList.add('show');
-  });
-}
-
-function fecharModalSobras() { sobrasModal.classList.remove('show'); }
-$('sobras-close').addEventListener('click', fecharModalSobras);
-$('sobras-cancel').addEventListener('click', fecharModalSobras);
-sobrasModal.addEventListener('click', e => { if (e.target === sobrasModal) fecharModalSobras(); });
-
-$('sobras-save').addEventListener('click', () => {
-  const nomeNovaFicha = $('sobras-name').value.trim();
-  if (!nomeNovaFicha) return alert("Por favor, digite um nome para a nova ficha.");
-
-  const checksMarcados = document.querySelectorAll('.sobra-check:checked');
-  if (checksMarcados.length === 0) return alert("Selecione pelo menos um insumo que sobrou.");
-
-  const novosItens = [];
-  let erroQuantidade = false;
-
-  checksMarcados.forEach(cb => {
-    const id = cb.dataset.id;
-    const nome = cb.dataset.nome;
-    const un = cb.dataset.un;
-    const qtdDigitada = parseFloat($(`sobra-qtd-${id}`).value);
-
-    if (isNaN(qtdDigitada) || qtdDigitada <= 0) {
-      erroQuantidade = true;
-    } else {
-      novosItens.push({ id, nome, necessario: qtdDigitada, unidade: un });
-    }
-  });
-
-  if (erroQuantidade) {
-    return alert("Por favor, informe uma quantidade válida (maior que zero) para todos os itens selecionados.");
-  }
-
-  const novaId = 'criativa_' + Date.now();
-  receitas[novaId] = {
-    nome: `🌟 Criativa: ${nomeNovaFicha}`,
-    local: `Sobras • ${turmas[turmaAtual].cozinha}`,
-    itens: novosItens
-  };
-
-  receitasPorTurma[turmaAtual].push(novaId);
-  popularReceitasDaTurma(turmaAtual);
-  trocarReceita(novaId);
-
-  fecharModalSobras();
-  alert(`Aula criativa criada com sucesso!\nForam reaproveitados ${novosItens.length} itens com as quantidades ajustadas.`);
 });
 
 
@@ -526,6 +526,7 @@ function trocarReceita(key) {
   if (select) select.value = key;
   renderTudo();
   highlightCard(key);
+  atualizarResumoReceita(key); // ATUALIZA O CARD LATERAL
 }
 
 function popularReceitasDaTurma(turmaKey) {
@@ -542,9 +543,7 @@ function trocarTurma(key) {
 
   popularReceitasDaTurma(key);
   const permitidas = receitasPorTurma[key] || Object.keys(receitas);
-  if (!permitidas.includes(receitaAtual)) {
-    receitaAtual = permitidas[0];
-  }
+  if (!permitidas.includes(receitaAtual)) receitaAtual = permitidas[0];
   select.value = receitaAtual;
 
   renderTudo();
@@ -589,13 +588,7 @@ function toggleSidebar(open) {
 menuBtn?.addEventListener('click', () => toggleSidebar(!sidebar.classList.contains('open')));
 overlay?.addEventListener('click', () => toggleSidebar(false));
 
-document.querySelectorAll('button').forEach(el => {
-  el.addEventListener('mousedown',  () => el.style.transform = 'scale(0.97)');
-  el.addEventListener('mouseup',    () => el.style.transform = 'scale(1)');
-  el.addEventListener('mouseleave', () => el.style.transform = 'scale(1)');
-});
-
-// Modal de observação (ao clicar no ícone de nota)
+// Modal de observação
 const obsModal = $('obs-modal');
 const obsName  = $('obs-item-name');
 const obsText  = $('obs-text');
@@ -603,8 +596,7 @@ let obsIdAtual   = null;
 let obsTipoAtual = null;
 
 function abrirObs(tipo, id) {
-  obsTipoAtual = tipo;
-  obsIdAtual   = id;
+  obsTipoAtual = tipo; obsIdAtual   = id;
   const panel = painels[tipo] || painels.main;
   const item = panel.getItens().find(i => i.id === id);
   obsName.textContent = item ? item.nome : '';
@@ -615,8 +607,7 @@ function abrirObs(tipo, id) {
 
 function fecharObs() {
   obsModal.classList.remove('show');
-  obsIdAtual = null;
-  obsTipoAtual = null;
+  obsIdAtual = null; obsTipoAtual = null;
 }
 
 $('obs-save').addEventListener('click', () => {
@@ -632,7 +623,6 @@ $('obs-cancel').addEventListener('click', fecharObs);
 obsModal.addEventListener('click', e => { if (e.target === obsModal) fecharObs(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharObs(); });
 
-
 // ===== Inicialização =====
 turmaAtual   = '2024.1.A';
 turmaSelect.value = turmaAtual;
@@ -642,6 +632,7 @@ select.value = receitaAtual;
 
 renderTudo();
 highlightCard(receitaAtual);
+atualizarResumoReceita(receitaAtual);
 
 // ===== CALENDÁRIO INTERATIVO =====
 (function () {

@@ -80,51 +80,81 @@
       </div>
     </section>
 
-    <section class="classes-col">
-      <div class="section-head split">
-        <div class="section-head plain">
-          <span class="material-symbols-outlined">today</span>
-          <h2 class="section-title">Receitas de Hoje</h2>
+    <div class="dashboard-top-grid">
+      
+      <section class="classes-col">
+        <div class="section-head split">
+          <div class="section-head plain">
+            <span class="material-symbols-outlined">today</span>
+            <h2 class="section-title">Receitas de Hoje</h2>
+          </div>
+          <button class="link-btn"><span class="material-symbols-outlined sm">calendar_month</span>Calendário</button>
         </div>
-        <button class="link-btn"><span class="material-symbols-outlined sm">calendar_month</span>Calendário</button>
-      </div>
 
-      <div class="class-card done" data-recipe="confeitaria_bolo" data-turma="2024.1.C">
-        <div class="class-time"><p class="t-main">08:00</p><p class="t-end">12:00</p></div>
-        <div class="divider"></div>
-        <div class="class-info">
-          <p class="class-name">Técnicas Básicas de Confeitaria</p>
-          <p class="class-meta">Cozinha Pedagógica 02 • Turma 2024.1.C</p>
+        <div class="class-card done" data-recipe="confeitaria_bolo" data-turma="2024.1.C">
+          <div class="class-time"><p class="t-main">08:00</p><p class="t-end">12:00</p></div>
+          <div class="divider"></div>
+          <div class="class-info">
+            <p class="class-name">Técnicas Básicas de Confeitaria</p>
+            <p class="class-meta">Cozinha Pedagógica 02 • Turma 2024.1.C</p>
+          </div>
+          <span class="status status-done"><span class="material-symbols-outlined sm">check_circle</span>Concluída</span>
         </div>
-        <span class="status status-done"><span class="material-symbols-outlined sm">check_circle</span>Concluída</span>
-      </div>
 
-      <div class="class-card running flight-accent" data-recipe="panificacao_pao" data-turma="2024.1.A">
-        <div class="class-time"><p class="t-main c-secondary">13:30</p><p class="t-end">17:30</p></div>
-        <div class="divider sec"></div>
-        <div class="class-info">
-          <p class="class-name">Panificação Clássica Européia</p>
-          <p class="class-meta">Padaria Lab 01 • Turma 2024.1.A</p>
-          <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita &amp; checklist</button>
+        <div class="class-card running flight-accent" data-recipe="panificacao_pao" data-turma="2024.1.A">
+          <div class="class-time"><p class="t-main c-secondary">13:30</p><p class="t-end">17:30</p></div>
+          <div class="divider sec"></div>
+          <div class="class-info">
+            <p class="class-name">Panificação Clássica Européia</p>
+            <p class="class-meta">Padaria Lab 01 • Turma 2024.1.A</p>
+            <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita</button>
+          </div>
+          <span class="status status-running"><span class="material-symbols-outlined sm">timer</span>Em Curso</span>
         </div>
-        <span class="status status-running"><span class="material-symbols-outlined sm">timer</span>Em Curso</span>
-      </div>
 
-      <div class="class-card" data-recipe="asia_yakisoba" data-turma="2024.2.N">
-        <div class="class-time"><p class="t-main">19:00</p><p class="t-end">22:30</p></div>
-        <div class="divider"></div>
-        <div class="class-info">
-          <p class="class-name">Cozinha Internacional: Ásia</p>
-          <p class="class-meta">Cozinha Pedagógica 04 • Turma 2024.2.N</p>
-          <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita &amp; checklist</button>
+        <div class="class-card" data-recipe="asia_yakisoba" data-turma="2024.2.N">
+          <div class="class-time"><p class="t-main">19:00</p><p class="t-end">22:30</p></div>
+          <div class="divider"></div>
+          <div class="class-info">
+            <p class="class-name">Cozinha Internacional: Ásia</p>
+            <p class="class-meta">Cozinha Pedagógica 04 • Turma 2024.2.N</p>
+            <button class="recipe-link"><span class="material-symbols-outlined sm">restaurant_menu</span>Ver receita</button>
+          </div>
+          <span class="status status-pending">Pendente</span>
         </div>
-        <span class="status status-pending">Pendente</span>
-      </div>
-    </section>
+      </section>
+
+      <aside class="recipe-summary-card" id="recipe-summary-card">
+        <div class="summary-head flight-accent">
+          <span class="material-symbols-outlined">menu_book</span>
+          <h3 class="summary-title">Resumo da Receita</h3>
+        </div>
+        
+        <div class="summary-body">
+          <h4 class="summary-recipe-name" id="summary-recipe-name">Selecione uma aula</h4>
+          
+          <ol class="summary-steps-list" id="summary-steps">
+            <li style="list-style: none; color: var(--on-surface-variant);">
+              Clique em "Ver receita" ao lado para carregar os detalhes.
+            </li>
+          </ol>
+          
+          <div class="summary-footer mt-auto" id="summary-footer" style="display: none;">
+            <button class="btn-confirm" id="btn-open-kitchen">
+              Passo a passo
+            </button>
+            <div class="summary-meta" id="summary-meta-badge">
+              <span class="material-symbols-outlined sm">timer</span>
+              <span id="summary-time">--</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
 
     <div class="checklists-grid">
 
-      <!-- CHECKLIST ÚNICO DE INSUMOS -->
       <section class="checklist-card">
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
@@ -165,7 +195,6 @@
             </button>
           </div>
           
-          <!-- FOOTER DE INSUMOS (Com a nova ficha no meio) -->
           <div class="checklist-footer">
             <button id="main-btn-reset" class="btn-ghost">Limpar</button>
             <button id="btn-sobras" class="btn-confirm">Criar Nova Receita</button>
@@ -174,7 +203,6 @@
         </div>
       </section>
 
-      <!-- CHECKLIST DE UTENSÍLIOS -->
       <section class="checklist-card">
         <div class="checklist-head flight-accent">
           <div class="ch-title-row">
@@ -202,7 +230,6 @@
           </button>
         </div>
 
-        <!-- FOOTER DE UTENSÍLIOS (Alinhado à esquerda e sem esticar) -->
         <div class="checklist-footer" style="justify-content: flex-start;">
           <button id="util-btn-reset" class="btn-ghost" style="flex: none; padding: 11px 24px;">Limpar</button>
           <button class="btn-confirm btn-finish-class" style="flex: none; padding: 11px 24px;">Confirmar Utensílios</button>
@@ -214,7 +241,6 @@
   </div>
 </main>
 
-<!-- MODAL DO CALENDÁRIO -->
 <div class="cal-modal" id="cal-modal">
   <div class="cal-box">
     <div class="cal-header flight-accent">
@@ -270,7 +296,6 @@
   </div>
 </div>
 
-<!-- MODAL DE OBSERVAÇÃO AO CLICAR NOS ITENS -->
 <div class="modal-overlay" id="obs-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
@@ -287,14 +312,13 @@
   </div>
 </div>
 
-<!-- MODAL DE SOLICITAÇÃO DE INSUMO EXTRA -->
 <div class="modal-overlay" id="extra-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
       <h3 class="modal-title">Solicitar Insumo Extra</h3>
       <button class="modal-close" id="extra-close"><span class="material-symbols-outlined">close</span></button>
     </div>
-    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">O item será registrado no checklist e enviado para validação da equipe de estoque.</p>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">O item será registrado no checklist e enviado para validação.</p>
     
     <label class="field-label dark">Nome do Insumo</label>
     <input type="text" id="extra-name" class="obs-textarea" style="min-height: 40px; margin-bottom: 12px; height: auto;" placeholder="Ex: Azeite Extra Virgem">
@@ -310,24 +334,23 @@
         </div>
     </div>
 
-    <label class="field-label dark">Observação / Motivo (Opcional)</label>
+    <label class="field-label dark">Observação / Motivo</label>
     <textarea id="extra-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Faltou para finalizar o prato..."></textarea>
 
     <div class="modal-footer">
       <button class="btn-ghost" style="flex: 1;" id="extra-cancel">Cancelar</button>
-      <button class="btn-confirm" style="flex: 1;" id="extra-save">Adicionar ao Checklist</button>
+      <button class="btn-confirm" style="flex: 1;" id="extra-save">Adicionar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL DE ADIÇÃO DE UTENSÍLIO EXTRA -->
 <div class="modal-overlay" id="util-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
       <h3 class="modal-title">Adicionar Utensílio Extra</h3>
       <button class="modal-close" id="util-close"><span class="material-symbols-outlined">close</span></button>
     </div>
-    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Adicione um utensílio necessário que não estava previsto na ficha da receita.</p>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Adicione um utensílio não previsto na ficha da receita.</p>
     
     <label class="field-label dark">Nome do Utensílio</label>
     <input type="text" id="util-name" class="obs-textarea" style="min-height: 40px; margin-bottom: 12px; height: auto;" placeholder="Ex: Liquidificador Industrial">
@@ -335,8 +358,8 @@
     <label class="field-label dark">Quantidade (un)</label>
     <input type="number" id="util-qtd" class="obs-textarea" style="min-height: 40px; margin-bottom: 12px; height: auto;" placeholder="Ex: 2">
 
-    <label class="field-label dark">Observação / Motivo (Opcional)</label>
-    <textarea id="util-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Precisamos de mais um para agilizar as equipes..."></textarea>
+    <label class="field-label dark">Observação / Motivo</label>
+    <textarea id="util-obs" class="obs-textarea" style="min-height: 60px; margin-bottom: 16px;" placeholder="Ex: Precisamos de mais um para agilizar..."></textarea>
 
     <div class="modal-footer">
       <button class="btn-ghost" style="flex: 1;" id="util-cancel">Cancelar</button>
@@ -345,45 +368,55 @@
   </div>
 </div>
 
-<!-- MODAL DE CONCLUSÃO DE AULA (RF10) -->
 <div class="modal-overlay" id="finish-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
       <h3 class="modal-title">Concluir Aula</h3>
       <button class="modal-close" id="finish-close"><span class="material-symbols-outlined">close</span></button>
     </div>
-    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Registre uma observação geral sobre o andamento da aula, incidentes ou desvios de cardápio.</p>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Registre uma observação geral sobre o andamento da aula.</p>
     
     <label class="field-label dark" for="finish-obs">Relato da Aula (Opcional)</label>
-    <textarea id="finish-obs" class="obs-textarea" style="min-height: 100px; margin-bottom: 16px;" placeholder="Ex: A turma estava muito agitada hoje, não deu tempo de empratar. O forno 2 está descalibrado..."></textarea>
+    <textarea id="finish-obs" class="obs-textarea" style="min-height: 100px; margin-bottom: 16px;" placeholder="Ex: A turma estava muito agitada hoje..."></textarea>
 
     <div class="modal-footer">
       <button class="btn-ghost" style="flex: 1;" id="finish-cancel">Cancelar</button>
-      <button class="btn-confirm" style="flex: 1;" id="finish-save">Salvar e Finalizar Aula</button>
+      <button class="btn-confirm" style="flex: 1;" id="finish-save">Salvar e Finalizar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL DE REAPROVEITAMENTO DE SOBRAS (AULA CRIATIVA) -->
 <div class="modal-overlay" id="sobras-modal">
   <div class="modal flight-accent">
     <div class="modal-head">
       <h3 class="modal-title">Nova Receita com Sobras</h3>
       <button class="modal-close" id="sobras-close"><span class="material-symbols-outlined">close</span></button>
     </div>
-    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Selecione os insumos que sobraram e informe a quantidade exata que será utilizada na nova receita.</p>
+    <p class="hero-sub" style="font-size: 14px; margin-bottom: 16px;">Selecione os insumos que sobraram e informe a quantidade.</p>
     
     <label class="field-label dark">Nome da Nova Ficha / Preparo</label>
     <input type="text" id="sobras-name" class="obs-textarea" style="min-height: 40px; margin-bottom: 16px;" placeholder="Ex: Pavlova de Frutas (Sobras)">
     
     <label class="field-label dark">Insumos da Receita Atual</label>
     <div id="sobras-list" style="max-height: 250px; overflow-y: auto; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #eee;">
-      <!-- Lista injetada pelo JS -->
     </div>
 
     <div class="modal-footer">
       <button class="btn-ghost" style="flex: 1;" id="sobras-cancel">Cancelar</button>
       <button class="btn-confirm" style="flex: 1;" id="sobras-save">Criar Nova Ficha</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="kitchen-modal">
+  <div class="modal modal-kitchen flight-accent">
+    <div class="modal-head">
+      <h3 class="modal-title" id="kitchen-title">Modo Cozinha</h3>
+      <button class="modal-close" id="kitchen-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="kitchen-content">
+      <ol class="kitchen-steps" id="kitchen-steps">
+        </ol>
     </div>
   </div>
 </div>

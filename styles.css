@@ -512,3 +512,215 @@ body{
 .cal-fiche-btn.locked:hover{
   background:transparent;
 }
+
+/* ===== GRID SUPERIOR (Aulas + Resumo) ===== */
+.dashboard-top-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  align-items: stretch;
+}
+
+/* Ajuste nos cards para caber no novo grid */
+.classes-col .class-card {
+  padding: 14px 18px; /* Reduzindo levemente o padding interno */
+}
+
+/* ===== CARD RESUMO DE RECEITA ===== */
+.recipe-summary-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: .2s;
+  cursor: pointer;
+}
+.recipe-summary-card:hover {
+  box-shadow: var(--shadow-2);
+  border-color: var(--primary-container);
+  transform: translateY(-2px);
+}
+.summary-head {
+  background: var(--primary);
+  color: #fff;
+  padding: 16px 20px;
+  border-bottom: 4px solid var(--secondary-container);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.summary-title {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.summary-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+.summary-recipe-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.summary-desc {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+}
+.summary-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--secondary);
+  background: var(--secondary-fixed);
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  align-self: flex-start;
+}
+.w-100 { width: 100%; }
+.mt-auto { margin-top: auto; }
+
+/* ===== MODAL MODO COZINHA ===== */
+.modal-kitchen {
+  max-width: 90vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-kitchen .modal-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--outline-variant);
+  margin-bottom: 24px;
+}
+.modal-kitchen .modal-title {
+  font-size: 28px;
+  color: var(--primary);
+}
+.kitchen-content {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 16px;
+}
+.kitchen-steps {
+  list-style-position: outside;
+  margin-left: 32px; 
+  font-size: 24px;   
+  color: var(--on-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.kitchen-steps li {
+  background: var(--surface-low);
+  padding: 24px 32px;
+  border-radius: var(--r-lg);
+  border-left: 8px solid var(--secondary-container);
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Responsividade do Grid Superior */
+@media(max-width: 1024px){
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* ===== CARD RESUMO: ESTRUTURA GERAL ===== */
+
+.recipe-summary-card {
+  background: var(--surface-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: .2s;
+  cursor: pointer;
+  
+  /* NOVAS REGRAS PARA TRAVAR O TAMANHO E FORÇAR O SCROLL: */
+  max-height: 450px;      /* Altura fixa máxima do card (pode ajustar esse valor se quiser maior ou menor) */
+  align-self: flex-start; /* Desliga o "esticamento" automático do Grid */
+}
+.summary-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow: hidden; /* Impede que o card cresça infinitamente e quebre o grid */
+}
+
+.summary-recipe-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  flex: none; /* O título fica fixo no topo */
+}
+
+/* ===== LISTA DE PASSOS (Scroll e Numeração) ===== */
+.summary-steps-list {
+  flex: 1; /* Ocupa todo o espaço disponível no meio */
+  overflow-y: auto; /* Cria o scroll vertical se ficar longo */
+  margin: 0;
+  padding: 0 12px 0 24px; /* Espaço para os números na esquerda */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  list-style-type: decimal; /* Formata como lista numerada (1, 2, 3...) */
+  
+  /* Scrollbar Customizada e Discreta */
+  scrollbar-width: thin;
+  scrollbar-color: var(--outline-variant) transparent;
+}
+
+.summary-steps-list::-webkit-scrollbar { width: 6px; }
+.summary-steps-list::-webkit-scrollbar-track { background: transparent; }
+.summary-steps-list::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: var(--r-full);
+}
+
+.summary-steps-list li {
+  line-height: 1.5;
+  padding-left: 4px; /* Distância entre o número e o texto */
+}
+
+.summary-steps-list li::marker {
+  color: var(--secondary-container); /* Pinta os números com a cor de destaque */
+  font-weight: 700;
+}
+
+/* ===== RODAPÉ FIXO DO CARD (Botão + Tempo) ===== */
+.summary-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding-top: 12px;
+  border-top: 1px solid var(--surface-variant); /* Linha sutil separando a lista do rodapé */
+  flex: none; /* Impede o rodapé de encolher */
+}
+
+#btn-open-kitchen {
+  flex: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.summary-meta {
+  margin: 0; 
+  align-self: center; 
+}
