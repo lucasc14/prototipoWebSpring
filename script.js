@@ -339,10 +339,11 @@ function configurarPainel(p, btnResetId) {
 
 configurarPainel(painels.main, 'main-btn-reset');
 configurarPainel(painels.util, 'util-btn-reset');
+
 // ===== RESUMO E MODO COZINHA =====
 const summaryName = $('summary-recipe-name');
 const summarySteps = $('summary-steps');
-const summaryFooter = $('summary-footer'); // Div que engloba o botão e tempo
+const summaryFooter = $('summary-footer'); 
 const summaryTime = $('summary-time');
 const summaryCard = $('recipe-summary-card');
 
@@ -350,14 +351,12 @@ const kitchenModal = $('kitchen-modal');
 const kitchenTitle = $('kitchen-title');
 const kitchenSteps = $('kitchen-steps');
 
-// 1. Atualizar o Card Lateral ao trocar a receita
 function atualizarResumoReceita(key) {
   const r = receitas[key];
   if (!r) return;
 
   if(summaryName) summaryName.textContent = r.nome;
   
-  // Popula os passos numerados
   if(summarySteps) {
     if (r.modoPreparo && r.modoPreparo.length > 0) {
       summarySteps.innerHTML = r.modoPreparo.map(passo => `<li>${passo}</li>`).join('');
@@ -366,7 +365,6 @@ function atualizarResumoReceita(key) {
     }
   }
 
-  // Mostra ou esconde o rodapé inteiro (botão e tempo) se houver dados
   if(summaryFooter && summaryTime) {
     if (r.tempoPreparo && r.modoPreparo && r.modoPreparo.length > 0) {
       summaryTime.textContent = r.tempoPreparo;
@@ -377,12 +375,11 @@ function atualizarResumoReceita(key) {
   }
 }
 
-// 2. Abrir o Modal Gigante
 function abrirModoCozinha() {
   const r = receitas[receitaAtual];
   if (!r) return;
 
-  if(kitchenTitle) kitchenTitle.textContent =  r.nome;
+  if(kitchenTitle) kitchenTitle.textContent = r.nome;
   
   if(kitchenSteps) {
     if (r.modoPreparo && r.modoPreparo.length > 0) {
@@ -395,11 +392,9 @@ function abrirModoCozinha() {
   if(kitchenModal) kitchenModal.classList.add('show');
 }
 
-// O botão abre o modo tela cheia
 const btnOpenKitchen = $('btn-open-kitchen');
 if(btnOpenKitchen) btnOpenKitchen.addEventListener('click', abrirModoCozinha);
 
-// 3. Fechar Modal Cozinha
 function fecharModalCozinha() { 
   if(kitchenModal) kitchenModal.classList.remove('show'); 
 }
@@ -514,9 +509,97 @@ $('finish-save').addEventListener('click', () => {
 
   fecharModalFinish();
   alert('Materiais separados e aula finalizada com sucesso!');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+
+// ===== REAPROVEITAMENTO DE SOBRAS (RF07) =====
+const sobrasModal = $('sobras-modal');
+
+if ($('btn-sobras')) {
+  $('btn-sobras').addEventListener('click', () => {
+    $('sobras-name').value = '';
+    const listaSobras = $('sobras-list');
+
+    const itensAtuais = painels.main.getItens();
+
+    if (itensAtuais.length === 0) {
+      return alert("Não há itens nesta receita para gerar sobras.");
+    }
+
+    listaSobras.innerHTML = itensAtuais.map(it => `
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;">
+          <input type="checkbox" class="sobra-check" data-id="${it.id}" data-nome="${it.nome}" data-un="${it.unidade}">
+          <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${it.nome}</span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="number" id="sobra-qtd-${it.id}" class="obs-textarea" style="width: 80px; min-height: 30px; height: 30px; padding: 4px 8px; margin: 0;" placeholder="0" disabled>
+          <span style="font-size: 12px; color: #64748b; width: 20px; text-align: left;">${it.unidade}</span>
+        </div>
+      </div>
+    `).join('');
+
+    listaSobras.querySelectorAll('.sobra-check').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const inputQtd = $(`sobra-qtd-${e.target.dataset.id}`);
+        inputQtd.disabled = !e.target.checked;
+        if (e.target.checked) inputQtd.focus();
+        else inputQtd.value = '';
+      });
+    });
+
+    sobrasModal.classList.add('show');
+  });
+}
+
+function fecharModalSobras() { sobrasModal.classList.remove('show'); }
+if ($('sobras-close')) $('sobras-close').addEventListener('click', fecharModalSobras);
+if ($('sobras-cancel')) $('sobras-cancel').addEventListener('click', fecharModalSobras);
+if (sobrasModal) sobrasModal.addEventListener('click', e => { if (e.target === sobrasModal) fecharModalSobras(); });
+
+if ($('sobras-save')) {
+  $('sobras-save').addEventListener('click', () => {
+    const nomeNovaFicha = $('sobras-name').value.trim();
+    if (!nomeNovaFicha) return alert("Por favor, digite um nome para a nova ficha.");
+
+    const checksMarcados = document.querySelectorAll('.sobra-check:checked');
+    if (checksMarcados.length === 0) return alert("Selecione pelo menos um insumo que sobrou.");
+
+    const novosItens = [];
+    let erroQuantidade = false;
+
+    checksMarcados.forEach(cb => {
+      const id = cb.dataset.id;
+      const nome = cb.dataset.nome;
+      const un = cb.dataset.un;
+      const qtdDigitada = parseFloat($(`sobra-qtd-${id}`).value);
+
+      if (isNaN(qtdDigitada) || qtdDigitada <= 0) {
+        erroQuantidade = true;
+      } else {
+        novosItens.push({ id, nome, necessario: qtdDigitada, unidade: un });
+      }
+    });
+
+    if (erroQuantidade) {
+      return alert("Por favor, informe uma quantidade válida (maior que zero) para todos os itens selecionados.");
+    }
+
+    const novaId = 'criativa_' + Date.now();
+    receitas[novaId] = {
+      nome: `🌟 Criativa: ${nomeNovaFicha}`,
+      local: `Sobras • ${turmas[turmaAtual].cozinha}`,
+      itens: novosItens
+    };
+
+    receitasPorTurma[turmaAtual].push(novaId);
+    popularReceitasDaTurma(turmaAtual);
+    trocarReceita(novaId);
+
+    fecharModalSobras();
+    alert(`Aula criativa criada com sucesso!\nForam reaproveitados ${novosItens.length} itens com as quantidades ajustadas.`);
+  });
+}
 
 // ===== Troca de receita / turma =====
 function trocarReceita(key) {
@@ -526,7 +609,7 @@ function trocarReceita(key) {
   if (select) select.value = key;
   renderTudo();
   highlightCard(key);
-  atualizarResumoReceita(key); // ATUALIZA O CARD LATERAL
+  atualizarResumoReceita(key); 
 }
 
 function popularReceitasDaTurma(turmaKey) {
@@ -564,8 +647,7 @@ document.querySelectorAll('.class-card').forEach(card => {
     link.addEventListener('click', () => {
       if (turmaKey && turmas[turmaKey]) trocarTurma(turmaKey);
       trocarReceita(recipeKey);
-      painels.main.lista.closest('.checklist-card')
-        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Removido o .scrollIntoView() para a tela não descer automaticamente!
     });
   }
 });
